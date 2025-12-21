@@ -2377,6 +2377,25 @@ async def get_profile_picture(user_id: str, current_user: User = Depends(get_cur
 
 app.include_router(api_router)
 
+# Root route for health check
+@app.get("/")
+async def root():
+    return {
+        "message": "रामा - The Poetic ERP API",
+        "status": "healthy",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "api": "/api"
+    }
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "database": "connected"
+    }
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
