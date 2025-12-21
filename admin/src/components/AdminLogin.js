@@ -3,7 +3,8 @@ import { Eye, EyeOff, Shield, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
+// Hardcode backend URL for now since environment variable is not being read in production
+const BACKEND_URL = 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET;
 
@@ -60,9 +61,7 @@ export default function AdminLogin({ onLogin }) {
         }
       }
 
-      console.log('Login response:', response.data);
-      console.log('Token:', response.data.token);
-      console.log('User:', response.data.user);
+      console.log('Login successful');
 
       if (!response.data.token) {
         throw new Error('No token received from server');
@@ -78,9 +77,6 @@ export default function AdminLogin({ onLogin }) {
       // Set new values
       localStorage.setItem('raama-admin-token', response.data.token);
       localStorage.setItem('raama-admin-user', JSON.stringify(response.data.user));
-      
-      console.log('Stored token:', localStorage.getItem('raama-admin-token'));
-      console.log('Stored user:', localStorage.getItem('raama-admin-user'));
       
       toast.success('Welcome to Admin Dashboard!');
       onLogin(response.data.user);

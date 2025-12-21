@@ -29,10 +29,16 @@ import axios from 'axios';
 import ProfilePicture from './ProfilePicture';
 import ProfilePictureModal from './ProfilePictureModal';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+// Hardcode backend URL for now since environment variable is not being read in production
+const BACKEND_URL = 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
+console.log('Using hardcoded backend URL:', BACKEND_URL);
+console.log('API endpoint:', API);
+
 export default function AdminDashboard({ user, onLogout }) {
+  console.log('AdminDashboard rendering with user:', user);
+  
   const [stats, setStats] = useState({});
   const [writers, setWriters] = useState([]);
   const [readers, setReaders] = useState([]);
@@ -78,14 +84,34 @@ export default function AdminDashboard({ user, onLogout }) {
   });
   
   const token = localStorage.getItem('raama-admin-token');
+  console.log('Token from localStorage:', token ? 'Present' : 'Missing');
+  console.log('Token length:', token?.length);
+  console.log('Token starts with:', token?.substring(0, 20) + '...');
 
   useEffect(() => {
+    // Test basic connectivity first
+    const testConnection = async () => {
+      try {
+        console.log('Testing basic connection to:', BACKEND_URL);
+        const response = await axios.get(BACKEND_URL);
+        console.log('Backend connection test:', response.data);
+      } catch (error) {
+        console.error('Backend connection failed:', error);
+      }
+    };
+    
+    testConnection();
     fetchAllData();
   }, []);
 
   const fetchAllData = async () => {
     setLoading(true);
+    console.log('Starting fetchAllData...');
+    console.log('Token:', token);
+    console.log('API URL:', API);
+    
     try {
+      console.log('Making API calls...');
       const [statsRes, writersRes, readersRes, shayarisRes, requestsRes] = await Promise.all([
         axios.get(`${API}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${API}/users/writers`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -93,6 +119,14 @@ export default function AdminDashboard({ user, onLogout }) {
         axios.get(`${API}/shayaris`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${API}/writer-requests`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
+      
+      console.log('API calls successful:', {
+        stats: statsRes.data,
+        writers: writersRes.data?.length,
+        readers: readersRes.data?.length,
+        shayaris: shayarisRes.data?.length,
+        requests: requestsRes.data?.length
+      });
       
       // Also fetch spotlights
       fetchSpotlights();
@@ -119,7 +153,9 @@ export default function AdminDashboard({ user, onLogout }) {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Failed to load dashboard data');
+      console.error('Error details:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      toast.error('Failed to load dashboard data: ' + (error.response?.data?.detail || error.message));
     } finally {
       setLoading(false);
     }
@@ -806,7 +842,7 @@ export default function AdminDashboard({ user, onLogout }) {
                       {admin.emailVerified ? 'Verified' : 'Unverified'}
                     </span></p>
                   </div>
-                  <div className="flex gap-2">
+                  {/* <div className="flex gap-2">
                     <select
                       value={admin.role}
                       onChange={(e) => handleChangeUserRole(admin.id, e.target.value)}
@@ -817,7 +853,7 @@ export default function AdminDashboard({ user, onLogout }) {
                       <option value="writer">Writer</option>
                       <option value="admin">Admin</option>
                     </select>
-                  </div>
+                  </div> */}
                 </div>
               ))}
             </div>
