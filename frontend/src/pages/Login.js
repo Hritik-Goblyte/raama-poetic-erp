@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Eye, EyeOff, CheckCircle, XCircle, Loader2, Mail } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { setUserInStorage, setTokenInStorage } from '@/utils/storage';
 
 const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
@@ -22,12 +22,8 @@ export default function Login() {
     role: 'reader'
   });
   const [usernameStatus, setUsernameStatus] = useState({ checking: false, available: null, message: '' });
-  const [showEmailVerification, setShowEmailVerification] = useState(false);
-  const [verificationEmail, setVerificationEmail] = useState('');
-  const [isResendingEmail, setIsResendingEmail] = useState(false);
-  const [autoCloseTimer, setAutoCloseTimer] = useState(0);
 
-  // Check for email verification token in URL
+  // Check for email verification token in URL (optional - users can login without verification)
   useEffect(() => {
     const token = searchParams.get('token');
     if (token) {
@@ -38,7 +34,7 @@ export default function Login() {
   const verifyEmailToken = async (token) => {
     try {
       await axios.post(`${API}/auth/verify-email`, { token });
-      toast.success('Email verified successfully! You can now login.');
+      toast.success('Email verified successfully!');
       navigate('/login', { replace: true });
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Email verification failed');
@@ -90,80 +86,14 @@ export default function Login() {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
       const response = await axios.post(`${API}${endpoint}`, formData);
       
-      if (isLogin) {
-        setTokenInStorage(response.data.token);
-        setUserInStorage(response.data.user);
-        toast.success('Welcome back!');
-        navigate('/');
-      } else {
-        // Registration successful - show email verification message
-        setVerificationEmail(formData.email);
-        setShowEmailVerification(true);
-        toast.success('Registration successful! Please check your email to verify your account.');
-        
-        // Reset form fields after successful registration
-        setFormData({
-          email: '',
-          password: '',
-          firstName: '',
-          lastName: '',
-          username: '',
-          role: 'reader'
-        });
-        setUsernameStatus({ checking: false, available: null, message: '' });
-        
-        // Auto-close modal after 10 seconds
-        setAutoCloseTimer(10);
-        const countdownInterval = setInterval(() => {
-          setAutoCloseTimer((prev) => {
-            if (prev <= 1) {
-              clearInterval(countdownInterval);
-              setShowEmailVerification(false);
-              toast.info('You can resend the verification email if needed.');
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      }
+      // Both login and registration now return token and user
+      setTokenInStorage(response.data.token);
+      setUserInStorage(response.data.user);
+      toast.success(isLogin ? 'Welcome back!' : 'Registration successful! Welcome to रामा!');
+      navigate('/');
     } catch (error) {
       const errorMessage = error.response?.data?.detail || 'Something went wrong';
-      
-      if (errorMessage.includes('verify your email')) {
-        // Show email verification dialog for unverified accounts
-        setVerificationEmail(formData.email);
-        setShowEmailVerification(true);
-        
-        // Auto-close modal after 10 seconds for login attempts with unverified email
-        setAutoCloseTimer(10);
-        const countdownInterval = setInterval(() => {
-          setAutoCloseTimer((prev) => {
-            if (prev <= 1) {
-              clearInterval(countdownInterval);
-              setShowEmailVerification(false);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      }
-      
       toast.error(errorMessage);
-    }
-  };
-
-  const handleResendVerification = async () => {
-    setIsResendingEmail(true);
-    try {
-      await axios.post(`${API}/auth/resend-verification`, {
-        email: verificationEmail,
-        password: formData.password
-      });
-      toast.success('Verification email sent! Please check your inbox.');
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to resend verification email');
-    } finally {
-      setIsResendingEmail(false);
     }
   };
 
@@ -328,69 +258,6 @@ export default function Login() {
           </div>
         </div>
       </div>
-
-      {/* Email Verification Modal */}
-      {showEmailVerification && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="glass-card p-6 lg:p-8 max-w-md w-full animate-in fade-in-0 zoom-in-95 duration-300">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail size={32} className="text-orange-500" />
-              </div>
-              <h2 className="text-2xl font-bold text-orange-500 mb-2">Verify Your Email</h2>
-              <p className="text-gray-400">
-                We've sent a verification link to <span className="text-white font-semibold">{verificationEmail}</span>
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-                <p className="text-blue-400 text-sm">
-                  <strong>Next Steps:</strong>
-                </p>
-                <ul className="text-blue-300 text-sm mt-2 space-y-1">
-                  <li>• Check your email inbox</li>
-                  <li>• Click the verification link</li>
-                  <li>• Return here to login</li>
-                </ul>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowEmailVerification(false);
-                    setAutoCloseTimer(0);
-                  }}
-                  className="flex-1 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-all"
-                >
-                  Close {autoCloseTimer > 0 && `(${autoCloseTimer}s)`}
-                </button>
-                <button
-                  onClick={handleResendVerification}
-                  disabled={isResendingEmail}
-                  className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-all hover:shadow-lg hover:shadow-orange-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isResendingEmail ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    'Resend Email'
-                  )}
-                </button>
-              </div>
-
-              <p className="text-gray-500 text-xs text-center">
-                Didn't receive the email? Check your spam folder or click "Resend Email"
-                {autoCloseTimer > 0 && (
-                  <><br />This dialog will close automatically in {autoCloseTimer} seconds</>
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

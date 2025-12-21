@@ -442,22 +442,26 @@ async def register(user_data: UserCreate):
     
     await db.users.insert_one(doc)
     
-    # Send verification email
+    # Send verification email (optional - user can login without verification)
     email_sent = await send_verification_email(user.email, verification_token, user.firstName)
     
     welcome_notif = Notification(
         userId=user.id,
-        message=f"Welcome to Raama, {user.firstName}! Please verify your email to start your poetic journey.",
+        message=f"Welcome to Raama, {user.firstName}! Start your poetic journey.",
         type="welcome"
     )
     notif_doc = welcome_notif.model_dump()
     notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
     await db.notifications.insert_one(notif_doc)
     
+    # Create token for immediate login
+    token = create_access_token({"sub": user.id})
+    
     return {
-        "message": "Registration successful! Please check your email to verify your account.",
-        "emailSent": email_sent,
-        "email": user.email
+        "token": token,
+        "user": user,
+        "message": "Registration successful! Welcome to रामा!",
+        "emailSent": email_sent
     }
 
 @api_router.post("/auth/verify-email")
@@ -497,12 +501,12 @@ async def login(credentials: UserLogin):
     if not pwd_context.verify(credentials.password, user_doc['password']):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Check if email is verified - REQUIRED for login
-    if not user_doc.get('emailVerified', False):
-        raise HTTPException(
-            status_code=403, 
-            detail="Please verify your email address before logging in. Check your inbox for the verification link."
-        )
+    # Email verification disabled - users can login without verification
+    # if not user_doc.get('emailVerified', False):
+    #     raise HTTPException(
+    #         status_code=403, 
+    #         detail="Please verify your email address before logging in. Check your inbox for the verification link."
+    #     )
     
     user = User(**{k: v for k, v in user_doc.items() if k != 'password'})
     token = create_access_token({"sub": user.id})
