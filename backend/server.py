@@ -536,7 +536,7 @@ async def test_email_configuration(email: str = "test@example.com"):
                 "frontend_url": FRONTEND_URL
             }
         }
-    } catch Exception as e:
+    except Exception as e:
         return {
             "success": False,
             "message": f"Error: {str(e)}",
