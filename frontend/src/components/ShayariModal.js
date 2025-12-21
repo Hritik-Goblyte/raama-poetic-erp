@@ -260,7 +260,7 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
           </div>
 
           {/* Scrollable Content Area */}
-          <div className="flex flex-col lg:flex-row min-h-[300px] lg:min-h-[400px] max-h-[70vh] lg:max-h-[60vh]">
+          <div className="flex flex-col min-h-[300px] lg:min-h-[400px] max-h-[70vh] lg:max-h-[60vh]">
             {/* Main Content - Scrollable */}
             <div className="flex-1 p-4 lg:p-6 overflow-y-auto custom-scrollbar">
               {/* Original Content */}
@@ -294,12 +294,134 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
                   </div>
                 </div>
               )}
+
+              {/* Author Signature - Mobile Only */}
+              <div className="lg:hidden mt-6 pt-6 border-t border-orange-500/20">
+                <div className="flex items-center gap-3 mb-3">
+                  <div onClick={handleAuthorProfilePictureClick}>
+                    <ProfilePicture 
+                      user={authorUser || { 
+                        firstName: shayari.authorName?.split(' ')[0] || 'Unknown',
+                        lastName: shayari.authorName?.split(' ')[1] || '',
+                        username: shayari.authorUsername 
+                      }} 
+                      size="md" 
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white">
+                      {shayari.authorName}
+                    </h3>
+                    <p className="text-orange-400 text-sm font-medium">@{shayari.authorUsername || 'Unknown'}</p>
+                  </div>
+                </div>
+                
+                {/* Pen Name Signature */}
+                <div className="mt-3 p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                  <p 
+                    className="text-orange-400 text-right italic"
+                    style={{ fontFamily: 'Style Script, cursive', fontSize: '1rem' }}
+                  >
+                    ~ {getPenName()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Mobile Action Buttons - Compact Icons Below Content */}
+              <div className="lg:hidden mt-6 pt-4 border-t border-gray-700/50">
+                <div className="flex justify-center items-center gap-6 mb-4">
+                  <button
+                    onClick={handleLike}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+                      shayari.likedBy?.includes(currentUser.id)
+                        ? 'text-red-400'
+                        : 'text-gray-400 hover:text-red-400'
+                    }`}
+                  >
+                    <Heart 
+                      size={24} 
+                      className={`${shayari.likedBy?.includes(currentUser.id) ? 'fill-current' : ''}`} 
+                    />
+                    <span className="text-xs">{shayari.likes || 0}</span>
+                  </button>
+
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowShareOptions(!showShareOptions)}
+                      className="flex flex-col items-center gap-1 p-2 rounded-lg text-gray-400 hover:text-blue-400 transition-all"
+                    >
+                      <Share2 size={24} />
+                      <span className="text-xs">Share</span>
+                    </button>
+
+                    {/* Mobile Share Options */}
+                    {showShareOptions && (
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-10 min-w-[120px]">
+                        <button
+                          onClick={handleWhatsAppShare}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-green-400 hover:bg-gray-700 transition-all text-sm"
+                        >
+                          <MessageCircle size={16} />
+                          <span>WhatsApp</span>
+                        </button>
+                        <button
+                          onClick={handleShare}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-gray-400 hover:bg-gray-700 transition-all border-t border-gray-600 text-sm"
+                        >
+                          <Share2 size={16} />
+                          <span>Copy</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleSave}
+                    disabled={checkingBookmark}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+                      isBookmarked
+                        ? 'text-orange-400'
+                        : 'text-gray-400 hover:text-green-400'
+                    } ${checkingBookmark ? 'opacity-50' : ''}`}
+                  >
+                    <Bookmark 
+                      size={24} 
+                      className={`${isBookmarked ? 'fill-current' : ''}`} 
+                    />
+                    <span className="text-xs">
+                      {checkingBookmark ? '...' : isBookmarked ? 'Saved' : 'Save'}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={handleTranslate}
+                    disabled={isTranslating}
+                    className="flex flex-col items-center gap-1 p-2 rounded-lg text-gray-400 hover:text-purple-400 transition-all disabled:opacity-50"
+                  >
+                    {isTranslating ? (
+                      <Loader2 size={24} className="animate-spin" />
+                    ) : (
+                      <Languages size={24} />
+                    )}
+                    <span className="text-xs">
+                      {isTranslating ? '...' : showTranslation ? 'Original' : 'Translate'}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Mobile Stats */}
+                <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                  <div className="text-sm text-gray-400">
+                    Created {format(new Date(shayari.createdAt), 'MMM dd, yyyy')} • {shayari.likes || 0} likes
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Sidebar with Author and Actions */}
-            <div className="lg:w-80 border-t lg:border-t-0 lg:border-l border-orange-500/20 bg-black/20">
+            {/* Desktop Sidebar with Author and Actions */}
+            <div className="hidden lg:block lg:w-80 border-l border-orange-500/20 bg-black/20">
               {/* Author Signature */}
-              <div className="p-4 lg:p-6 border-b border-orange-500/20">
+              <div className="p-6 border-b border-orange-500/20">
                 <div className="flex items-center gap-3 mb-3">
                   <div onClick={handleAuthorProfilePictureClick}>
                     <ProfilePicture 
@@ -331,8 +453,8 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="p-4 lg:p-6 space-y-3">
+              {/* Desktop Action Buttons */}
+              <div className="p-6 space-y-3">
                 <button
                   onClick={handleLike}
                   className={`w-full flex items-center justify-center gap-3 py-3 px-4 border rounded-lg transition-all group ${
@@ -362,7 +484,7 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
                     <span className="font-medium">Share</span>
                   </button>
 
-                  {/* Share Options Dropdown */}
+                  {/* Desktop Share Options Dropdown */}
                   {showShareOptions && (
                     <div className="absolute bottom-full left-0 right-0 mb-2 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-10">
                       <button
@@ -448,8 +570,8 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
                 )}
               </div>
 
-              {/* Stats */}
-              <div className="p-4 lg:p-6 pt-0">
+              {/* Desktop Stats */}
+              <div className="p-6 pt-0">
                 <div className="bg-gray-800/50 rounded-lg p-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Created</span>
