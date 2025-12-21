@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, Clock, TrendingUp, Hash, X } from 'lucide-react';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
 export default function SearchBar({ onSearch, onClose }) {

@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Eye, EyeOff, CheckCircle, XCircle, Loader2, Mail } from 'lucide-react';
+import { setUserInStorage, setTokenInStorage } from '@/utils/storage';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
 export default function Login() {
@@ -89,8 +90,8 @@ export default function Login() {
       const response = await axios.post(`${API}${endpoint}`, formData);
       
       if (isLogin) {
-        localStorage.setItem('raama-token', response.data.token);
-        localStorage.setItem('raama-user', JSON.stringify(response.data.user));
+        setTokenInStorage(response.data.token);
+        setUserInStorage(response.data.user);
         toast.success('Welcome back!');
         navigate('/');
       } else {

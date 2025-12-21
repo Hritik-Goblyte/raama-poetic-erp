@@ -50,7 +50,6 @@ export default function Dashboard({ theme, setTheme }) {
       </div>
     );
   }
-  const token = getTokenFromStorage();
 
   useEffect(() => {
     fetchData();

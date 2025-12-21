@@ -8,7 +8,7 @@ import ProfilePicture from '@/components/ProfilePicture';
 import ProfilePictureModal from '@/components/ProfilePictureModal';
 // import { translateWithFallback } from '../lib/geminiTranslation';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
 export default function ShayariModal({ shayari, isOpen, onClose }) {

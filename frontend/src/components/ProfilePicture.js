@@ -3,7 +3,7 @@ import { Camera, Upload, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
 export default function ProfilePicture({ user, onUpdate, size = 'md', editable = false }) {

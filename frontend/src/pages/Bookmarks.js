@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Bookmark, Trash2, Calendar, User } from 'lucide-react';
 import { format } from 'date-fns';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
 export default function Bookmarks({ theme, setTheme }) {
