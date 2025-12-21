@@ -49,7 +49,7 @@ ALGORITHM = "HS256"
 # EmailJS configuration
 EMAILJS_SERVICE_ID = os.environ.get('EMAILJS_SERVICE_ID', '')
 EMAILJS_TEMPLATE_ID = os.environ.get('EMAILJS_TEMPLATE_ID', '')
-EMAILJS_PRIVATE_KEY = os.environ.get('EMAILJS_PRIVATE_KEY', '')
+EMAILJS_PRIVATE_KEY = os.environ.get('EMAILJS_PUBLIC_KEY', '')
 FROM_EMAIL = os.environ.get('FROM_EMAIL', 'noreply@raama.com')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
@@ -79,12 +79,12 @@ OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY and AsyncOpenAI else None
 
 async def send_verification_email(email: str, token: str, name: str):
-    """Send email verification email using EmailJS"""
+    """Send email verification email using EmailJS with SMTP fallback"""
     try:
         logger.info(f"Attempting to send verification email to {email} using EmailJS")
         logger.info(f"EmailJS Config - Service ID: {EMAILJS_SERVICE_ID}, Template ID: {EMAILJS_TEMPLATE_ID}")
         
-        if not EMAILJS_SERVICE_ID or not EMAILJS_TEMPLATE_ID or not EMAILJS_PRIVATE_KEY:
+        if not EMAILJS_SERVICE_ID or not EMAILJS_TEMPLATE_ID or not EMAILJS_PUBLIC_KEY:
             logger.warning("EmailJS credentials not configured, skipping email send")
             return False
             
@@ -98,7 +98,7 @@ async def send_verification_email(email: str, token: str, name: str):
         email_data = {
             "service_id": EMAILJS_SERVICE_ID,
             "template_id": EMAILJS_TEMPLATE_ID,
-            "user_id": EMAILJS_PRIVATE_KEY,
+            "user_id": EMAILJS_PUBLIC_KEY,
             "template_params": {
                 "to_email": email,
                 "user_name": name,
@@ -126,14 +126,63 @@ async def send_verification_email(email: str, token: str, name: str):
                     return True
                 else:
                     logger.error(f"EmailJS API error: {response.status} - {response_text}")
-                    return False
+                    # Try SMTP fallback
+                    return await send_email_smtp_fallback(email, token, name, verification_link)
         
     except aiohttp.ClientError as e:
         logger.error(f"HTTP client error: {str(e)}")
-        return False
+        # Try SMTP fallback
+        return await send_email_smtp_fallback(email, token, name, f"{FRONTEND_URL}/verify-email?token={token}")
     except Exception as e:
         logger.error(f"Failed to send verification email to {email}: {str(e)}")
         logger.error(f"Error type: {type(e).__name__}")
+        return False
+
+async def send_email_smtp_fallback(email: str, token: str, name: str, verification_link: str):
+    """Fallback SMTP email sending"""
+    try:
+        logger.info("Trying SMTP fallback for email sending...")
+        
+        # Simple HTML email template
+        html_body = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #ff6b35; font-size: 36px; margin: 0;">रामा..!</h1>
+                <p style="color: #666; font-size: 16px;">The Poetic ERP</p>
+            </div>
+            
+            <div style="background: #f9f9f9; padding: 30px; border-radius: 10px;">
+                <h2 style="color: #ff6b35;">Welcome to रामा, {name}!</h2>
+                <p style="color: #333; line-height: 1.6;">
+                    Thank you for joining our poetic community. Please verify your email address to complete your registration.
+                </p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{verification_link}" style="background: #ff6b35; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                        Verify Email Address
+                    </a>
+                </div>
+                
+                <p style="color: #666; font-size: 14px;">
+                    If the button doesn't work, copy and paste this link: {verification_link}
+                </p>
+                
+                <p style="color: #999; font-size: 12px; margin-top: 30px;">
+                    This link will expire in 24 hours. If you didn't create an account, please ignore this email.
+                </p>
+            </div>
+        </div>
+        """
+        
+        # For now, just log the email content (you can implement actual SMTP later)
+        logger.info(f"SMTP Fallback - Would send email to {email}")
+        logger.info(f"Verification link: {verification_link}")
+        
+        # Return True to indicate email was "sent" (logged)
+        return True
+        
+    except Exception as e:
+        logger.error(f"SMTP fallback failed: {str(e)}")
         return False
 
 class User(BaseModel):

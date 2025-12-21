@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/utils/axiosConfig';
 import { toast } from 'sonner';
 import { CheckCircle, XCircle, Loader2, Mail, ArrowLeft } from 'lucide-react';
 
@@ -25,7 +25,7 @@ export default function EmailVerification() {
 
   const verifyEmail = async (token) => {
     try {
-      const response = await axios.post(`${API}/auth/verify-email`, { token });
+      const response = await api.post(`${API}/auth/verify-email`, { token });
       setStatus('success');
       setMessage(response.data.message);
       toast.success('Email verified successfully!');
