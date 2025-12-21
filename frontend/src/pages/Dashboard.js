@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import ShayariModal from '@/components/ShayariModal';
-import axios from 'axios';
+import api from '@/utils/axiosConfig';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Trash2, Heart, Calendar, TrendingUp, Crown, Eye, Share2, BookOpen } from 'lucide-react';
@@ -58,11 +58,11 @@ export default function Dashboard({ theme, setTheme }) {
   const fetchData = async () => {
     try {
       const [statsRes, notifsRes, shayarisRes, trendingRes, featuredRes] = await Promise.all([
-        axios.get(`${API}/stats`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API}/notifications`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API}/shayaris`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API}/shayaris/trending`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
-        axios.get(`${API}/shayaris/featured`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] }))
+        api.get(`${API}/stats`, { headers: { Authorization: `Bearer ${token}` } }),
+        api.get(`${API}/notifications`, { headers: { Authorization: `Bearer ${token}` } }),
+        api.get(`${API}/shayaris`, { headers: { Authorization: `Bearer ${token}` } }),
+        api.get(`${API}/shayaris/trending`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
+        api.get(`${API}/shayaris/featured`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] }))
       ]);
       setStats(statsRes.data);
       setNotifications(notifsRes.data.slice(0, 5));
@@ -80,7 +80,7 @@ export default function Dashboard({ theme, setTheme }) {
     
     setLoading(true);
     try {
-      const response = await axios.get(`${API}/shayaris`, {
+      const response = await api.get(`${API}/shayaris`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAllShayaris(response.data);
@@ -94,7 +94,7 @@ export default function Dashboard({ theme, setTheme }) {
   const handleCreateShayari = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API}/shayaris`, newShayari, {
+      await api.post(`${API}/shayaris`, newShayari, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Shayari created successfully!');
@@ -108,7 +108,7 @@ export default function Dashboard({ theme, setTheme }) {
 
   const handleDeleteNotification = async (id) => {
     try {
-      await axios.delete(`${API}/notifications/${id}`, {
+      await api.delete(`${API}/notifications/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(notifications.filter(n => n.id !== id));
@@ -129,7 +129,7 @@ export default function Dashboard({ theme, setTheme }) {
   const handleShayariClick = async (shayari) => {
     // Record view
     try {
-      await axios.post(`${API}/shayaris/${shayari.id}/view`, {}, {
+      await api.post(`${API}/shayaris/${shayari.id}/view`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     } catch (error) {

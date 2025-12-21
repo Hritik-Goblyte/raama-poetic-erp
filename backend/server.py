@@ -383,7 +383,7 @@ async def register(user_data: UserCreate):
         lastName=user_data.lastName,
         username=user_data.username,
         role=user_data.role,
-        emailVerified=True,  # Temporarily disable email verification
+        emailVerified=False,  # Enable email verification requirement
         emailVerificationToken=verification_token
     )
     
@@ -393,26 +393,22 @@ async def register(user_data: UserCreate):
     
     await db.users.insert_one(doc)
     
-    # Send verification email (attempt but don't block registration)
+    # Send verification email
     email_sent = await send_verification_email(user.email, verification_token, user.firstName)
     
     welcome_notif = Notification(
         userId=user.id,
-        message=f"Welcome to Raama, {user.firstName}! Start your poetic journey.",
+        message=f"Welcome to Raama, {user.firstName}! Please verify your email to start your poetic journey.",
         type="welcome"
     )
     notif_doc = welcome_notif.model_dump()
     notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
     await db.notifications.insert_one(notif_doc)
     
-    # Create token for immediate login (email verification temporarily disabled)
-    token = create_access_token({"sub": user.id})
-    
     return {
-        "token": token,
-        "user": user,
-        "message": "Registration successful!" + (" Verification email sent." if email_sent else " (Email verification temporarily disabled)"),
-        "emailSent": email_sent
+        "message": "Registration successful! Please check your email to verify your account.",
+        "emailSent": email_sent,
+        "email": user.email
     }
 
 @api_router.post("/auth/verify-email")
@@ -540,12 +536,22 @@ async def test_email_configuration(email: str = "test@example.com"):
                 "frontend_url": FRONTEND_URL
             }
         }
-    except Exception as e:
+    } catch Exception as e:
         return {
             "success": False,
             "message": f"Error: {str(e)}",
             "error_type": type(e).__name__
         }
+
+@api_router.post("/auth/test-email-simple")
+async def test_email_simple():
+    """Simple test to check EmailJS credentials"""
+    return {
+        "emailjs_service_id": EMAILJS_SERVICE_ID or "NOT_SET",
+        "emailjs_template_id": EMAILJS_TEMPLATE_ID or "NOT_SET", 
+        "emailjs_private_key": "SET" if EMAILJS_PRIVATE_KEY else "NOT_SET",
+        "configured": bool(EMAILJS_SERVICE_ID and EMAILJS_TEMPLATE_ID and EMAILJS_PRIVATE_KEY)
+    }
 
 @api_router.get("/auth/me", response_model=User)
 async def get_me(current_user: User = Depends(get_current_user)):
