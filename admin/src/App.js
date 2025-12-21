@@ -12,24 +12,54 @@ function App() {
     const token = localStorage.getItem('raama-admin-token');
     const userData = localStorage.getItem('raama-admin-user');
     
-    if (token && userData) {
+    console.log('App useEffect - token:', token);
+    console.log('App useEffect - userData:', userData);
+    
+    // Check for valid token and userData (not null, undefined, or "undefined")
+    if (token && userData && token !== 'undefined' && userData !== 'undefined') {
       try {
         const parsedUser = JSON.parse(userData);
-        if (parsedUser.role === 'admin') {
+        console.log('Parsed user:', parsedUser);
+        console.log('User role:', parsedUser?.role);
+        
+        if (parsedUser && parsedUser.role === 'admin') {
+          console.log('Setting user as admin');
           setUser(parsedUser);
+        } else {
+          console.log('User is not admin, role:', parsedUser?.role);
+          // Clear invalid data
+          localStorage.removeItem('raama-admin-token');
+          localStorage.removeItem('raama-admin-user');
         }
       } catch (error) {
         console.error('Error parsing user data:', error);
         localStorage.removeItem('raama-admin-token');
         localStorage.removeItem('raama-admin-user');
       }
+    } else {
+      console.log('No valid token/userData found, clearing localStorage');
+      localStorage.removeItem('raama-admin-token');
+      localStorage.removeItem('raama-admin-user');
     }
     
     setIsLoading(false);
   }, []);
 
   const handleLogin = (userData) => {
+    console.log('handleLogin called with:', userData);
+    console.log('User role:', userData?.role);
+    
+    // Store in localStorage first
+    localStorage.setItem('raama-admin-token', localStorage.getItem('raama-admin-token'));
+    localStorage.setItem('raama-admin-user', JSON.stringify(userData));
+    
+    // Set user state
     setUser(userData);
+    
+    // Force a small delay to ensure state updates
+    setTimeout(() => {
+      console.log('After timeout - user state:', userData);
+    }, 100);
   };
 
   const handleLogout = () => {
@@ -37,6 +67,9 @@ function App() {
     localStorage.removeItem('raama-admin-user');
     setUser(null);
   };
+
+  console.log('App render - user:', user);
+  console.log('App render - isLoading:', isLoading);
 
   if (isLoading) {
     return (
@@ -51,6 +84,15 @@ function App() {
 
   return (
     <div className="App">
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{position: 'fixed', top: 0, right: 0, background: 'black', color: 'white', padding: '10px', zIndex: 9999, fontSize: '12px'}}>
+          <div>User: {user ? 'Logged in' : 'Not logged in'}</div>
+          <div>Role: {user?.role || 'N/A'}</div>
+          <div>Email: {user?.email || 'N/A'}</div>
+        </div>
+      )}
+      
       {user ? (
         <AdminDashboard user={user} onLogout={handleLogout} />
       ) : (

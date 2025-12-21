@@ -3,7 +3,7 @@ import { Eye, EyeOff, Shield, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET;
 
@@ -22,20 +22,70 @@ export default function AdminLogin({ onLogin }) {
     
     setIsLoading(true);
     try {
-      // Use new admin login endpoint with individual secret
-      const response = await axios.post(`${API}/auth/admin-login`, {
-        email: credentials.email,
-        password: credentials.password,
-        adminSecret: credentials.adminSecret
-      });
+      // Try admin login first (with secret)
+      let response;
+      if (credentials.adminSecret) {
+        try {
+          response = await axios.post(`${API}/auth/admin-login`, {
+            email: credentials.email,
+            password: credentials.password,
+            adminSecret: credentials.adminSecret
+          });
+        } catch (adminError) {
+          // If admin login fails, try regular login for admin users
+          if (adminError.response?.status === 401 && adminError.response?.data?.detail?.includes('Admin secret')) {
+            response = await axios.post(`${API}/auth/login`, {
+              email: credentials.email,
+              password: credentials.password
+            });
+            
+            // Check if user is admin
+            if (response.data.user.role !== 'admin') {
+              throw new Error('Admin access required');
+            }
+          } else {
+            throw adminError;
+          }
+        }
+      } else {
+        // Use regular login if no admin secret provided
+        response = await axios.post(`${API}/auth/login`, {
+          email: credentials.email,
+          password: credentials.password
+        });
+        
+        // Check if user is admin
+        if (response.data.user.role !== 'admin') {
+          throw new Error('Admin access required');
+        }
+      }
 
+      console.log('Login response:', response.data);
+      console.log('Token:', response.data.token);
+      console.log('User:', response.data.user);
+
+      if (!response.data.token) {
+        throw new Error('No token received from server');
+      }
+      if (!response.data.user) {
+        throw new Error('No user data received from server');
+      }
+
+      // Clear any existing values first
+      localStorage.removeItem('raama-admin-token');
+      localStorage.removeItem('raama-admin-user');
+      
+      // Set new values
       localStorage.setItem('raama-admin-token', response.data.token);
       localStorage.setItem('raama-admin-user', JSON.stringify(response.data.user));
+      
+      console.log('Stored token:', localStorage.getItem('raama-admin-token'));
+      console.log('Stored user:', localStorage.getItem('raama-admin-user'));
       
       toast.success('Welcome to Admin Dashboard!');
       onLogin(response.data.user);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Login failed');
+      toast.error(error.response?.data?.detail || error.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -104,17 +154,16 @@ export default function AdminLogin({ onLogin }) {
             {/* Admin Secret Field */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Admin Secret Key
+                Admin Secret Key <span className="text-gray-500 text-xs">(Optional)</span>
               </label>
               <div className="relative">
                 <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type={showSecret ? 'text' : 'password'}
-                  required
                   value={credentials.adminSecret}
                   onChange={(e) => setCredentials({...credentials, adminSecret: e.target.value})}
                   className="w-full pl-10 pr-12 py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
-                  placeholder="Enter admin secret key"
+                  placeholder="Leave empty if not configured"
                 />
                 <button
                   type="button"
