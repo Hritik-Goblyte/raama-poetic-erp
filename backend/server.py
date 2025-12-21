@@ -436,12 +436,12 @@ async def login(credentials: UserLogin):
     if not pwd_context.verify(credentials.password, user_doc['password']):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Check if email is verified (temporarily disabled for testing)
-    # if not user_doc.get('emailVerified', False):
-    #     raise HTTPException(
-    #         status_code=403, 
-    #         detail="Please verify your email address before logging in. Check your inbox for the verification link."
-    #     )
+    # Check if email is verified - REQUIRED for login
+    if not user_doc.get('emailVerified', False):
+        raise HTTPException(
+            status_code=403, 
+            detail="Please verify your email address before logging in. Check your inbox for the verification link."
+        )
     
     user = User(**{k: v for k, v in user_doc.items() if k != 'password'})
     token = create_access_token({"sub": user.id})

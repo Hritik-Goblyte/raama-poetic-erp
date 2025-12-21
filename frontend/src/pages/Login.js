@@ -25,6 +25,7 @@ export default function Login() {
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
   const [isResendingEmail, setIsResendingEmail] = useState(false);
+  const [autoCloseTimer, setAutoCloseTimer] = useState(0);
 
   // Check for email verification token in URL
   useEffect(() => {
@@ -99,6 +100,31 @@ export default function Login() {
         setVerificationEmail(formData.email);
         setShowEmailVerification(true);
         toast.success('Registration successful! Please check your email to verify your account.');
+        
+        // Reset form fields after successful registration
+        setFormData({
+          email: '',
+          password: '',
+          firstName: '',
+          lastName: '',
+          username: '',
+          role: 'reader'
+        });
+        setUsernameStatus({ checking: false, available: null, message: '' });
+        
+        // Auto-close modal after 10 seconds
+        setAutoCloseTimer(10);
+        const countdownInterval = setInterval(() => {
+          setAutoCloseTimer((prev) => {
+            if (prev <= 1) {
+              clearInterval(countdownInterval);
+              setShowEmailVerification(false);
+              toast.info('You can resend the verification email if needed.');
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       }
     } catch (error) {
       const errorMessage = error.response?.data?.detail || 'Something went wrong';
@@ -107,6 +133,19 @@ export default function Login() {
         // Show email verification dialog for unverified accounts
         setVerificationEmail(formData.email);
         setShowEmailVerification(true);
+        
+        // Auto-close modal after 10 seconds for login attempts with unverified email
+        setAutoCloseTimer(10);
+        const countdownInterval = setInterval(() => {
+          setAutoCloseTimer((prev) => {
+            if (prev <= 1) {
+              clearInterval(countdownInterval);
+              setShowEmailVerification(false);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       }
       
       toast.error(errorMessage);
@@ -318,10 +357,13 @@ export default function Login() {
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowEmailVerification(false)}
+                  onClick={() => {
+                    setShowEmailVerification(false);
+                    setAutoCloseTimer(0);
+                  }}
                   className="flex-1 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-all"
                 >
-                  Close
+                  Close {autoCloseTimer > 0 && `(${autoCloseTimer}s)`}
                 </button>
                 <button
                   onClick={handleResendVerification}
@@ -341,6 +383,9 @@ export default function Login() {
 
               <p className="text-gray-500 text-xs text-center">
                 Didn't receive the email? Check your spam folder or click "Resend Email"
+                {autoCloseTimer > 0 && (
+                  <><br />This dialog will close automatically in {autoCloseTimer} seconds</>
+                )}
               </p>
             </div>
           </div>
