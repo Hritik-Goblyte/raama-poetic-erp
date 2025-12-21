@@ -148,6 +148,7 @@ class User(BaseModel):
     emailVerificationToken: Optional[str] = None
     profilePicture: Optional[str] = None  # Base64 encoded image or URL
     adminSecret: Optional[str] = None  # Individual admin secret key (only for admin users)
+    roleChangedAt: Optional[datetime] = None  # Track when role was last changed for session invalidation
     createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
@@ -323,11 +324,26 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         token = credentials.credentials
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
+        token_issued_at = payload.get("iat")  # Token issued at timestamp
+        
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
+            
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         if user is None:
             raise HTTPException(status_code=401, detail="User not found")
+        
+        # Check if user's role has changed since token was issued
+        if user.get('roleChangedAt'):
+            role_changed_at = datetime.fromisoformat(user['roleChangedAt'].replace('Z', '+00:00'))
+            token_issued_datetime = datetime.fromtimestamp(token_issued_at, tz=timezone.utc)
+            
+            if role_changed_at > token_issued_datetime:
+                raise HTTPException(
+                    status_code=401, 
+                    detail="Your account role has been updated. Please log out and log back in to access new features."
+                )
+        
         return User(**user)
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
@@ -758,7 +774,18 @@ async def approve_writer_request(request_id: str, admin_user: User = Depends(get
     if request['status'] != "pending":
         raise HTTPException(status_code=400, detail="Request already processed")
     
-    await db.users.update_one({"id": request['userId']}, {"$set": {"role": "writer"}})
+    # Update user role and set roleChangedAt timestamp to invalidate current sessions
+    role_changed_at = datetime.now(timezone.utc)
+    await db.users.update_one(
+        {"id": request['userId']}, 
+        {
+            "$set": {
+                "role": "writer",
+                "roleChangedAt": role_changed_at.isoformat()
+            }
+        }
+    )
+    
     await db.writer_requests.update_one(
         {"id": request_id},
         {"$set": {"status": "approved", "processedAt": datetime.now(timezone.utc).isoformat()}}
@@ -766,7 +793,7 @@ async def approve_writer_request(request_id: str, admin_user: User = Depends(get
     
     notif = Notification(
         userId=request['userId'],
-        message="Congratulations! Your writer request has been approved. Log-In again to create shayaris.",
+        message="Congratulations! Your writer request has been approved. Please log out and log back in to access writer features.",
         type="approval"
     )
     notif_doc = notif.model_dump()
@@ -917,13 +944,22 @@ async def change_user_role(user_id: str, role_data: dict, admin_user: User = Dep
     if not user_to_update:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Update user role
-    await db.users.update_one({"id": user_id}, {"$set": {"role": new_role}})
+    # Update user role and set roleChangedAt timestamp to invalidate current sessions
+    role_changed_at = datetime.now(timezone.utc)
+    await db.users.update_one(
+        {"id": user_id}, 
+        {
+            "$set": {
+                "role": new_role,
+                "roleChangedAt": role_changed_at.isoformat()
+            }
+        }
+    )
     
     # Create notification for user
     notif = Notification(
         userId=user_id,
-        message=f"Your role has been changed to {new_role} by admin.",
+        message=f"Your role has been changed to {new_role} by admin. Please log out and log back in to access new features.",
         type="role_change"
     )
     notif_doc = notif.model_dump()
