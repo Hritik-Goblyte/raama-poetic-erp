@@ -12,9 +12,8 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 import jwt
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import aiohttp
+import json
 import secrets
 
 # Configure logging first
@@ -47,11 +46,10 @@ security = HTTPBearer()
 SECRET_KEY = os.environ.get('JWT_SECRET', 'raama-secret-key-change-in-production')
 ALGORITHM = "HS256"
 
-# Email configuration
-SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
-SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
-SMTP_USERNAME = os.environ.get('SMTP_USERNAME', '')
-SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+# EmailJS configuration
+EMAILJS_SERVICE_ID = os.environ.get('EMAILJS_SERVICE_ID', '')
+EMAILJS_TEMPLATE_ID = os.environ.get('EMAILJS_TEMPLATE_ID', '')
+EMAILJS_PRIVATE_KEY = os.environ.get('EMAILJS_PRIVATE_KEY', '')
 FROM_EMAIL = os.environ.get('FROM_EMAIL', 'noreply@raama.com')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
@@ -81,83 +79,57 @@ OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY and AsyncOpenAI else None
 
 async def send_verification_email(email: str, token: str, name: str):
-    """Send email verification email"""
+    """Send email verification email using EmailJS"""
     try:
-        logger.info(f"Attempting to send verification email to {email}")
-        logger.info(f"SMTP Config - Server: {SMTP_SERVER}, Port: {SMTP_PORT}, Username: {SMTP_USERNAME}")
+        logger.info(f"Attempting to send verification email to {email} using EmailJS")
+        logger.info(f"EmailJS Config - Service ID: {EMAILJS_SERVICE_ID}, Template ID: {EMAILJS_TEMPLATE_ID}")
         
-        if not SMTP_USERNAME or not SMTP_PASSWORD:
-            logger.warning("Email credentials not configured, skipping email send")
+        if not EMAILJS_SERVICE_ID or not EMAILJS_TEMPLATE_ID or not EMAILJS_PRIVATE_KEY:
+            logger.warning("EmailJS credentials not configured, skipping email send")
             return False
             
         verification_link = f"{FRONTEND_URL}/verify-email?token={token}"
         logger.info(f"Verification link: {verification_link}")
         
-        msg = MIMEMultipart()
-        msg['From'] = FROM_EMAIL
-        msg['To'] = email
-        msg['Subject'] = "रामा - Verify Your Email Address"
+        # EmailJS API endpoint
+        emailjs_url = "https://api.emailjs.com/api/v1.0/email/send"
         
-        html_body = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; background-color: #0a0a0a; color: #ffffff; padding: 20px;">
-            <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%); border-radius: 16px; padding: 40px; border: 1px solid #ff6b35;">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #ff6b35; font-size: 48px; margin: 0; text-shadow: 0 0 20px rgba(255, 107, 53, 0.5);">रामा..!</h1>
-                    <p style="color: #cccccc; font-size: 18px; margin: 10px 0;">The Poetic ERP</p>
-                </div>
+        # Prepare email data for EmailJS
+        email_data = {
+            "service_id": EMAILJS_SERVICE_ID,
+            "template_id": EMAILJS_TEMPLATE_ID,
+            "user_id": EMAILJS_PRIVATE_KEY,
+            "template_params": {
+                "to_email": email,
+                "user_name": name,
+                "verification_link": verification_link,
+                "from_name": "रामा Team",
+                "from_email": FROM_EMAIL
+            }
+        }
+        
+        logger.info("Sending email via EmailJS API...")
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                emailjs_url,
+                json=email_data,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            ) as response:
+                response_text = await response.text()
                 
-                <div style="background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 30px; border: 1px solid rgba(255, 255, 255, 0.08);">
-                    <h2 style="color: #ff6b35; margin-bottom: 20px;">Welcome to रामा, {name}!</h2>
-                    <p style="color: #cccccc; line-height: 1.6; margin-bottom: 20px;">
-                        Thank you for joining our poetic community. To complete your registration and start your journey with beautiful shayaris, please verify your email address.
-                    </p>
-                    
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="{verification_link}" style="background: #ff6b35; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);">
-                            Verify Email Address
-                        </a>
-                    </div>
-                    
-                    <p style="color: #999999; font-size: 14px; margin-top: 20px;">
-                        If the button doesn't work, copy and paste this link in your browser:<br>
-                        <span style="color: #ff6b35; word-break: break-all;">{verification_link}</span>
-                    </p>
-                    
-                    <p style="color: #999999; font-size: 12px; margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;">
-                        This verification link will expire in 24 hours. If you didn't create an account with रामा, please ignore this email.
-                    </p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
+                if response.status == 200:
+                    logger.info(f"Verification email sent successfully to {email}")
+                    logger.info(f"EmailJS response: {response_text}")
+                    return True
+                else:
+                    logger.error(f"EmailJS API error: {response.status} - {response_text}")
+                    return False
         
-        msg.attach(MIMEText(html_body, 'html'))
-        
-        logger.info("Connecting to SMTP server...")
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.set_debuglevel(1)  # Enable debug output
-        
-        logger.info("Starting TLS...")
-        server.starttls()
-        
-        logger.info("Logging in to SMTP server...")
-        server.login(SMTP_USERNAME, SMTP_PASSWORD)
-        
-        logger.info("Sending email...")
-        server.send_message(msg)
-        server.quit()
-        
-        logger.info(f"Verification email sent successfully to {email}")
-        return True
-        
-    except smtplib.SMTPAuthenticationError as e:
-        logger.error(f"SMTP Authentication failed: {str(e)}")
-        logger.error("Check your email credentials and app password")
-        return False
-    except smtplib.SMTPException as e:
-        logger.error(f"SMTP error occurred: {str(e)}")
+    except aiohttp.ClientError as e:
+        logger.error(f"HTTP client error: {str(e)}")
         return False
     except Exception as e:
         logger.error(f"Failed to send verification email to {email}: {str(e)}")
@@ -537,7 +509,7 @@ async def resend_verification_email(credentials: UserLogin):
 
 @api_router.post("/auth/test-email")
 async def test_email_configuration(email: str = "test@example.com"):
-    """Test email configuration - for debugging purposes"""
+    """Test EmailJS configuration - for debugging purposes"""
     try:
         test_token = "test-token-123"
         result = await send_verification_email(email, test_token, "Test User")
@@ -545,9 +517,9 @@ async def test_email_configuration(email: str = "test@example.com"):
             "success": result,
             "message": "Email sent successfully" if result else "Email sending failed",
             "config": {
-                "smtp_server": SMTP_SERVER,
-                "smtp_port": SMTP_PORT,
-                "smtp_username": SMTP_USERNAME,
+                "emailjs_service_id": EMAILJS_SERVICE_ID,
+                "emailjs_template_id": EMAILJS_TEMPLATE_ID,
+                "emailjs_configured": bool(EMAILJS_SERVICE_ID and EMAILJS_TEMPLATE_ID and EMAILJS_PRIVATE_KEY),
                 "from_email": FROM_EMAIL,
                 "frontend_url": FRONTEND_URL
             }
@@ -2391,10 +2363,18 @@ async def root():
 # Health check endpoint
 @app.get("/health")
 async def health_check():
+    try:
+        # Test database connection
+        await db.users.count_documents({})
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    
     return {
         "status": "healthy",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "database": "connected"
+        "database": db_status,
+        "mongodb_url": mongo_url[:50] + "..." if mongo_url else "not set"
     }
 
 app.add_middleware(
