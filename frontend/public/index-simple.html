@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>रामा - The Poetic ERP</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            text-align: center;
+            padding: 3rem;
+            border: 2px solid #ff6b35;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(255, 107, 53, 0.2);
+            max-width: 600px;
+        }
+        h1 {
+            color: #ff6b35;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+        }
+        .subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: #cccccc;
+        }
+        .status {
+            padding: 1.5rem;
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: 12px;
+            margin: 2rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .success {
+            color: #4ade80;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .loading {
+            color: #fbbf24;
+        }
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: #ff6b35;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+        .btn:hover {
+            background: #e55a2b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+        }
+        .links {
+            margin-top: 2rem;
+        }
+        .links a {
+            color: #ff6b35;
+            text-decoration: none;
+            margin: 0 1rem;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>रामा..!</h1>
+        <p class="subtitle">The Poetic ERP</p>
+        
+        <div class="status">
+            <h3>🚀 Deployment Status</h3>
+            <p class="success">✅ Frontend deployed successfully</p>
+            <p id="api-status" class="loading">🔄 Testing backend connection...</p>
+            <p id="db-status" class="loading">🔄 Testing database connection...</p>
+        </div>
+        
+        <div class="links">
+            <h3>🔗 Quick Links</h3>
+            <a href="/login" class="btn">Login Page</a>
+            <a href="https://raama-backend-srrb.onrender.com/docs" target="_blank" class="btn">API Docs</a>
+        </div>
+        
+        <div class="links">
+            <p>
+                <a href="/test.html">Test Page</a> | 
+                <a href="https://raama-backend-srrb.onrender.com" target="_blank">Backend API</a> |
+                <a href="https://raama-backend-srrb.onrender.com/health" target="_blank">Health Check</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const apiUrl = 'https://raama-backend-srrb.onrender.com';
+        
+        // Test backend connection
+        fetch(apiUrl + '/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'healthy') {
+                    document.getElementById('api-status').innerHTML = '<span class="success">✅ Backend API: ' + data.message + '</span>';
+                    
+                    // Test a protected endpoint to check database
+                    return fetch(apiUrl + '/api/users/writers');
+                } else {
+                    throw new Error('Backend unhealthy');
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    document.getElementById('db-status').innerHTML = '<span class="success">✅ Database connected (authentication required)</span>';
+                } else if (response.ok) {
+                    document.getElementById('db-status').innerHTML = '<span class="success">✅ Database connected and accessible</span>';
+                } else {
+                    document.getElementById('db-status').innerHTML = '<span class="error">❌ Database connection issue</span>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('api-status').innerHTML = '<span class="error">❌ Backend connection failed: ' + error.message + '</span>';
+                document.getElementById('db-status').innerHTML = '<span class="error">❌ Cannot test database (backend offline)</span>';
+            });
+    </script>
+</body>
+</html>

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Trash2, Heart, Calendar, TrendingUp, Crown, Eye, Share2, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
+import { getUserFromStorage, getTokenFromStorage } from '@/utils/storage';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -23,8 +24,10 @@ export default function Dashboard({ theme, setTheme }) {
   const [showShayariModal, setShowShayariModal] = useState(false);
   const [activeTab, setActiveTab] = useState('recent');
   const [loading, setLoading] = useState(false);
-  const user = JSON.parse(localStorage.getItem('raama-user') || '{}');
-  const token = localStorage.getItem('raama-token');
+  
+  // Safe user and token retrieval
+  const user = getUserFromStorage();
+  const token = getTokenFromStorage();
 
   useEffect(() => {
     fetchData();

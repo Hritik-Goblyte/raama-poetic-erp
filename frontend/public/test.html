@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>रामा - Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            border: 2px solid #ff6b35;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        h1 {
+            color: #ff6b35;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        .status {
+            padding: 1rem;
+            background: #1a1a1a;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .success {
+            color: #4ade80;
+        }
+        .error {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>रामा..!</h1>
+        <p>The Poetic ERP - Deployment Test</p>
+        
+        <div class="status">
+            <h3>Deployment Status:</h3>
+            <p class="success">✅ Static files deployed successfully</p>
+            <p id="api-status">🔄 Testing API connection...</p>
+        </div>
+        
+        <p>If you see this page, your frontend deployment is working!</p>
+        <p>Main app should be available at: <a href="/login" style="color: #ff6b35;">/login</a></p>
+    </div>
+
+    <script>
+        // Test API connection
+        const apiUrl = 'https://raama-backend-srrb.onrender.com';
+        
+        // Test root endpoint first
+        fetch(apiUrl + '/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'healthy') {
+                    document.getElementById('api-status').innerHTML = '<span class="success">✅ Backend API is healthy: ' + data.message + '</span>';
+                } else {
+                    document.getElementById('api-status').innerHTML = '<span class="error">❌ Backend API unhealthy</span>';
+                }
+            })
+            .catch(error => {
+                // Fallback to docs endpoint
+                fetch(apiUrl + '/docs')
+                    .then(response => {
+                        if (response.ok) {
+                            document.getElementById('api-status').innerHTML = '<span class="success">✅ Backend API is accessible (docs available)</span>';
+                        } else {
+                            document.getElementById('api-status').innerHTML = '<span class="error">❌ Backend API returned error: ' + response.status + '</span>';
+                        }
+                    })
+                    .catch(error => {
+                        document.getElementById('api-status').innerHTML = '<span class="error">❌ Backend API connection failed: ' + error.message + '</span>';
+                    });
+            });
+    </script>
+</body>
+</html>
