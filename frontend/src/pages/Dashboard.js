@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import ShayariModal from '@/components/ShayariModal';
 import axios from 'axios';
@@ -8,10 +9,11 @@ import { Plus, Trash2, Heart, Calendar, TrendingUp, Crown, Eye, Share2, BookOpen
 import { format } from 'date-fns';
 import { getUserFromStorage, getTokenFromStorage } from '@/utils/storage';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
 export default function Dashboard({ theme, setTheme }) {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({ myCreations: 0, totalShayaris: 0, totalWriters: 0, unreadNotifications: 0 });
   const [notifications, setNotifications] = useState([]);
   const [recentShayaris, setRecentShayaris] = useState([]);
@@ -27,6 +29,27 @@ export default function Dashboard({ theme, setTheme }) {
   
   // Safe user and token retrieval
   const user = getUserFromStorage();
+  const token = getTokenFromStorage();
+
+  // Redirect to login if no user or token
+  useEffect(() => {
+    if (!user || !token) {
+      navigate('/login');
+      return;
+    }
+  }, [user, token, navigate]);
+
+  // Don't render if no user (will redirect)
+  if (!user || !token) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-white">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
   const token = getTokenFromStorage();
 
   useEffect(() => {
@@ -97,7 +120,7 @@ export default function Dashboard({ theme, setTheme }) {
   };
 
   const handleFloatingButton = () => {
-    if (user.role === 'writer') {
+    if (user?.role === 'writer') {
       setShowNewShayariModal(true);
     } else {
       toast.error('Only writers can create shayaris');
@@ -151,9 +174,9 @@ export default function Dashboard({ theme, setTheme }) {
             }}>
               रामा….
             </h1>
-            <p className="text-2xl text-gray-400">Welcome you, <span className="text-white font-semibold">{user.firstName?.split(' ')[0]}</span></p>
+            <p className="text-2xl text-gray-400">Welcome you, <span className="text-white font-semibold">{user?.firstName?.split(' ')[0] || 'Guest'}</span></p>
             <p className="text-orange-500 font-semibold mt-1" data-testid="user-role">
-              {user.role === 'writer' ? 'Writer' : 'Reader'}
+              {user?.role === 'writer' ? 'Writer' : 'Reader'}
             </p>
           </div>
 
@@ -164,7 +187,7 @@ export default function Dashboard({ theme, setTheme }) {
             </div>
             <div className="glass-card p-6" data-testid="stat-username">
               <h3 className="text-gray-400 mb-2">Username</h3>
-              <p className="text-2xl font-bold">{user.username}</p>
+              <p className="text-2xl font-bold">{user?.username || 'N/A'}</p>
             </div>
             {/* <div className="glass-card p-6" data-testid="stat-total-shayaris">
               <h3 className="text-gray-400 mb-2">Total Shayaris</h3>
