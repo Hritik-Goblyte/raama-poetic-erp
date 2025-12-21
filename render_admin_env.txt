@@ -1,0 +1,2 @@
+# Copy these environment variables to Render Admin
+REACT_APP_API_URL=https://raama-backend.onrender.com

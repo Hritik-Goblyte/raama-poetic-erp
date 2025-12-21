@@ -1,0 +1,328 @@
+@import url('https://fonts.googleapis.com/css2?family=Tillana:wght@400;500;600;700;800&family=Macondo&family=Style+Script&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Tillana', cursive;
+  overflow-x: hidden;
+}
+
+.App {
+  min-height: 100vh;
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+:root {
+  --orange-primary: #ff6b35;
+  --orange-secondary: #ff8c42;
+  --orange-light: #ffa566;
+  --dark-bg: #0a0a0a;
+  --dark-card: #1a1a1a;
+  --dark-border: #2a2a2a;
+  --dark-text: #e0e0e0;
+  --light-bg: #f5f5f5;
+  --light-card: #ffffff;
+  --light-border: #e0e0e0;
+  --light-text: #1a1a1a;
+}
+
+.dark {
+  --app-bg: var(--dark-bg);
+  --app-card: var(--dark-card);
+  --app-border: var(--dark-border);
+  --app-text: var(--dark-text);
+  --app-text-secondary: #999;
+  --app-hover: rgba(255, 107, 53, 0.1);
+}
+
+.light {
+  --app-bg: var(--light-bg);
+  --app-card: var(--light-card);
+  --app-border: var(--light-border);
+  --app-text: var(--light-text);
+  --app-text-secondary: #666;
+  --app-hover: rgba(255, 107, 53, 0.05);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+
+.dark .glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.light .glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.orange-gradient {
+  background: linear-gradient(135deg, var(--orange-primary), var(--orange-secondary));
+}
+
+.btn-primary {
+  background: var(--orange-primary);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: 'Tillana', cursive;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: var(--orange-secondary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--orange-primary);
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: 2px solid var(--orange-primary);
+  cursor: pointer;
+  font-family: 'Tillana', cursive;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--orange-primary);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--app-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--orange-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--orange-secondary);
+}
+
+.poetic-font {
+  font-family: 'Style Script', cursive;
+}
+
+.title-font {
+  font-family: 'Macondo', cursive;
+}
+
+/* Custom scrollbar for modal content */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 107, 53, 0.6);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 53, 0.8);
+}
+
+/* Line clamp utility for truncating text */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 1024px) {
+  .glass-card {
+    border-radius: 12px;
+  }
+  
+  /* Ensure text is readable on mobile */
+  body {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  /* Better touch targets */
+  button, .cursor-pointer {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improved spacing for mobile */
+  .space-y-2 > * + * {
+    margin-top: 0.75rem;
+  }
+  
+  .space-y-3 > * + * {
+    margin-top: 1rem;
+  }
+  
+  /* Mobile-friendly modal sizing */
+  [role="dialog"] {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* PWA-like styles */
+@media (max-width: 768px) {
+  /* Hide scrollbars on mobile for cleaner look */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 2px;
+  }
+  
+  /* Better mobile typography */
+  h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+  
+  /* Mobile-optimized cards */
+  .glass-card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Ensure proper spacing around mobile UI elements */
+  .pt-16 {
+    padding-top: 4rem;
+  }
+  
+  .pb-20 {
+    padding-bottom: 5rem;
+  }
+}
+
+/* App-like mobile experience */
+@media (max-width: 1024px) {
+  /* Smooth scrolling for mobile */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Better touch targets */
+  button, .cursor-pointer, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    font-size: 16px;
+  }
+  
+  /* Mobile-friendly modal positioning */
+  [role="dialog"] {
+    margin: 0.5rem;
+    max-height: calc(100vh - 1rem);
+    width: calc(100vw - 1rem);
+  }
+  
+  /* Improved mobile grid layouts */
+  .grid {
+    gap: 1rem;
+  }
+  
+  /* Better mobile spacing */
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-y-6 > * + * {
+    margin-top: 1.5rem;
+  }
+  
+  /* Mobile-specific improvements */
+  .glass-card:hover {
+    transform: none; /* Disable hover transforms on mobile */
+  }
+  
+  /* Better mobile button spacing */
+  .flex.gap-2 {
+    gap: 0.75rem;
+  }
+  
+  .flex.gap-3 {
+    gap: 1rem;
+  }
+  
+  /* Mobile-friendly text sizes */
+  .text-5xl {
+    font-size: 2.5rem;
+  }
+  
+  .text-4xl {
+    font-size: 2rem;
+  }
+  
+  .text-3xl {
+    font-size: 1.75rem;
+  }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  .hover\:scale-\[1\.02\]:hover {
+    transform: none;
+  }
+  
+  .hover\:shadow-lg:hover {
+    box-shadow: none;
+  }
+  
+  /* Add active states for touch feedback */
+  button:active, .cursor-pointer:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}

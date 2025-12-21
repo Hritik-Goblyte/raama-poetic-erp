@@ -1,0 +1,31 @@
+{
+  "short_name": "रामा",
+  "name": "रामा - Poetry Platform",
+  "description": "A beautiful platform for sharing and discovering Hindi poetry and shayaris",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#ff6b35",
+  "background_color": "#0a0a0a",
+  "orientation": "portrait-primary",
+  "categories": ["entertainment", "social", "lifestyle"],
+  "lang": "hi",
+  "scope": "/",
+  "prefer_related_applications": false
+}
