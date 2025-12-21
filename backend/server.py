@@ -2393,6 +2393,7 @@ async def root():
 async def health_check():
     return {
         "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "database": "connected"
     }
 
