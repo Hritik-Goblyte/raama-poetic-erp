@@ -124,21 +124,29 @@ export default function Login() {
   };
 
   const handleResendVerification = async () => {
-    if (!formData.email || !formData.password) {
-      toast.error('Please enter your email and password');
+    if (!formData.email) {
+      toast.error('Please enter your email address');
       return;
     }
 
     setResendingEmail(true);
     try {
-      await axios.post(`${API}/auth/resend-verification`, {
-        email: formData.email,
-        password: formData.password
+      // Use the new OTP resend endpoint
+      await axios.post(`${API}/auth/resend-otp`, {
+        email: formData.email
       });
-      toast.success('Verification email sent! Check your inbox.');
+      toast.success('New OTP sent! Please check your email.');
       setEmailVerificationError(false);
+      
+      // Redirect to OTP verification page
+      setTimeout(() => {
+        navigate('/verify-otp', { 
+          state: { email: formData.email },
+          replace: true
+        });
+      }, 100);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to send verification email');
+      toast.error(error.response?.data?.detail || 'Failed to send OTP');
     } finally {
       setResendingEmail(false);
     }
@@ -300,21 +308,24 @@ export default function Login() {
 
           {emailVerificationError && isLogin && (
             <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <p className="text-red-400 text-sm mb-3">
-                Your email address is not verified. Please check your inbox for the verification link.
+              <p className="text-red-400 text-sm mb-2">
+                Your email address is not verified.
+              </p>
+              <p className="text-gray-400 text-xs mb-3">
+                Email: <span className="text-orange-500">{formData.email}</span>
               </p>
               <button
                 onClick={handleResendVerification}
-                disabled={resendingEmail}
+                disabled={resendingEmail || !formData.email}
                 className="w-full py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
               >
                 {resendingEmail ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Sending...
+                    Sending OTP...
                   </>
                 ) : (
-                  'Resend Verification Email'
+                  'Send OTP & Verify Email'
                 )}
               </button>
             </div>
