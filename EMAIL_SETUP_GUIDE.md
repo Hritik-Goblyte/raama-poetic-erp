@@ -24,23 +24,24 @@ EmailJS allows you to send emails directly from the frontend or backend without 
 
 1. Go to **Email Templates** in your dashboard
 2. Click **Create New Template**
-3. Use this template content:
+3. Use this template content for **OTP emails**:
 
 ```html
-Subject: Verify your email for रामा..!
+Subject: Your रामा Verification Code
 
 Hello {{user_name}},
 
 Welcome to रामा..! - The Poetic ERP Platform.
 
-Please verify your email address by clicking the link below:
+Your email verification code is:
 
-{{verification_link}}
+{{otp_code}}
 
-If the button doesn't work, copy and paste this link in your browser:
-{{verification_link}}
+This code will expire in {{expiry_time}}.
 
-This link will expire in 24 hours.
+Please enter this code on the verification page to complete your registration.
+
+If you didn't create an account, please ignore this email.
 
 Best regards,
 The रामा Team
@@ -49,11 +50,24 @@ The रामा Team
 
 4. Save the template and note down your **Template ID**
 
-### Step 4: Get Public Key
+### Step 3b: Template Variables
+
+Make sure your EmailJS template includes these variables:
+- `{{user_name}}` - User's first name
+- `{{otp_code}}` - 6-digit verification code
+- `{{expiry_time}}` - "10 minutes"
+- `{{from_name}}` - "रामा Team"
+- `{{from_email}}` - Your configured from email
+
+### Step 4: Get Public and Private Keys
 
 1. Go to **Account** → **General**
-2. Find your **Public Key**
-3. Copy it for later use
+2. Find your **Public Key** and copy it
+3. Go to **Account** → **API Keys**
+4. Create a new **Private Key** or use existing one
+5. Copy both keys for configuration
+
+**Important:** Private key is required for server-side API calls!
 
 ### Step 5: Configure Backend Environment
 
@@ -64,6 +78,7 @@ Update your `backend/.env` file:
 EMAILJS_SERVICE_ID="your_service_id_here"
 EMAILJS_TEMPLATE_ID="your_template_id_here"
 EMAILJS_PUBLIC_KEY="your_public_key_here"
+EMAILJS_PRIVATE_KEY="your_private_key_here"
 
 # Email Settings
 FROM_EMAIL="noreply@yourdomain.com"
@@ -97,19 +112,20 @@ FRONTEND_URL="http://localhost:3000"
 
 **Note:** For Gmail, you'll need to use an App Password instead of your regular password.
 
-## 📧 How Email Verification Works
+## 📧 How Email Verification Works (OTP System)
 
-1. **Registration**: User registers → Email verification set to `false` → Verification email sent
-2. **Login Attempt**: If email not verified → Show error message with resend option
-3. **Email Click**: User clicks verification link → Email verified → Can login normally
-4. **Resend**: User can request new verification email if needed
+1. **Registration**: User registers → Email verification set to `false` → 6-digit OTP generated → OTP email sent
+2. **OTP Entry**: User enters OTP on verification page → OTP validated → Email verified → Auto login
+3. **OTP Expiry**: OTP expires in 10 minutes → User can request new OTP
+4. **Login Attempt**: If email not verified → Show error message with verification option
 
-## 🎯 Email Template Variables
+## 🎯 Email Template Variables (OTP System)
 
 The system uses these variables in email templates:
 
 - `{{user_name}}` - User's first name
-- `{{verification_link}}` - Complete verification URL
+- `{{otp_code}}` - 6-digit verification code
+- `{{expiry_time}}` - "10 minutes"
 - `{{from_name}}` - "रामा Team"
 - `{{from_email}}` - Your configured from email
 

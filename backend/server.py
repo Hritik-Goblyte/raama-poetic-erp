@@ -9,12 +9,13 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, timedelta
 from passlib.context import CryptContext
 import jwt
 import aiohttp
 import json
 import secrets
+import random
 
 # Configure logging first
 logging.basicConfig(
@@ -50,6 +51,7 @@ ALGORITHM = "HS256"
 EMAILJS_SERVICE_ID = os.environ.get('EMAILJS_SERVICE_ID', '')
 EMAILJS_TEMPLATE_ID = os.environ.get('EMAILJS_TEMPLATE_ID', '')
 EMAILJS_PUBLIC_KEY = os.environ.get('EMAILJS_PUBLIC_KEY', '')
+EMAILJS_PRIVATE_KEY = os.environ.get('EMAILJS_PRIVATE_KEY', '')
 FROM_EMAIL = os.environ.get('FROM_EMAIL', 'noreply@raama.com')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
@@ -77,6 +79,73 @@ def get_openai_client():
 # OpenAI configuration
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY and AsyncOpenAI else None
+
+def generate_otp():
+    """Generate 6-digit OTP"""
+    return str(random.randint(100000, 999999))
+
+def get_otp_expiry():
+    """Get OTP expiry time (10 minutes from now)"""
+    return datetime.now(timezone.utc) + timedelta(minutes=10)
+
+async def send_otp_email(email: str, otp: str, name: str):
+    """Send OTP email using EmailJS"""
+    try:
+        logger.info(f"Attempting to send OTP email to {email}")
+        
+        if not EMAILJS_SERVICE_ID or not EMAILJS_TEMPLATE_ID or not EMAILJS_PUBLIC_KEY:
+            logger.warning("EmailJS credentials not configured, logging OTP instead")
+            logger.info(f"🔐 OTP for {email}: {otp} (Valid for 10 minutes)")
+            return True
+            
+        # EmailJS API endpoint
+        emailjs_url = "https://api.emailjs.com/api/v1.0/email/send"
+        
+        # Prepare email data for EmailJS
+        email_data = {
+            "service_id": EMAILJS_SERVICE_ID,
+            "template_id": EMAILJS_TEMPLATE_ID,
+            "user_id": EMAILJS_PUBLIC_KEY,
+            "template_params": {
+                "to_email": email,
+                "user_name": name,
+                "otp_code": otp,
+                "from_name": "रामा Team",
+                "from_email": FROM_EMAIL,
+                "expiry_time": "10 minutes"
+            }
+        }
+        
+        # Add private key if available for API calls
+        if EMAILJS_PRIVATE_KEY:
+            email_data["accessToken"] = EMAILJS_PRIVATE_KEY
+        
+        logger.info("Sending OTP email via EmailJS API...")
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                emailjs_url,
+                json=email_data,
+                headers={
+                    "Content-Type": "application/json"
+                }
+            ) as response:
+                response_text = await response.text()
+                
+                if response.status == 200:
+                    logger.info(f"OTP email sent successfully to {email}")
+                    return True
+                else:
+                    logger.error(f"EmailJS API error: {response.status} - {response_text}")
+                    # Log OTP as fallback
+                    logger.info(f"🔐 FALLBACK - OTP for {email}: {otp} (Valid for 10 minutes)")
+                    return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send OTP email to {email}: {str(e)}")
+        # Log OTP as fallback
+        logger.info(f"🔐 FALLBACK - OTP for {email}: {otp} (Valid for 10 minutes)")
+        return True
 
 async def send_verification_email(email: str, token: str, name: str):
     """Send email verification email using EmailJS with SMTP fallback"""
@@ -195,6 +264,8 @@ class User(BaseModel):
     role: str = "reader"
     emailVerified: bool = False
     emailVerificationToken: Optional[str] = None
+    emailOTP: Optional[str] = None  # 6-digit OTP for email verification
+    otpExpiresAt: Optional[datetime] = None  # OTP expiry time
     profilePicture: Optional[str] = None  # Base64 encoded image or URL
     adminSecret: Optional[str] = None  # Individual admin secret key (only for admin users)
     roleChangedAt: Optional[datetime] = None  # Track when role was last changed for session invalidation
@@ -334,6 +405,13 @@ class UsernameCheckRequest(BaseModel):
 class EmailVerificationRequest(BaseModel):
     token: str
 
+class OTPVerificationRequest(BaseModel):
+    email: str
+    otp: str
+
+class ResendOTPRequest(BaseModel):
+    email: str
+
 class Bookmark(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -422,8 +500,9 @@ async def register(user_data: UserCreate):
     if existing_username:
         raise HTTPException(status_code=400, detail="Username already taken")
     
-    # Generate email verification token
-    verification_token = secrets.token_urlsafe(32)
+    # Generate OTP for email verification
+    otp = generate_otp()
+    otp_expiry = get_otp_expiry()
     
     hashed_password = pwd_context.hash(user_data.password)
     user = User(
@@ -432,35 +511,115 @@ async def register(user_data: UserCreate):
         lastName=user_data.lastName,
         username=user_data.username,
         role=user_data.role,
-        emailVerified=False,  # Enable email verification requirement
-        emailVerificationToken=verification_token
+        emailVerified=False,
+        emailOTP=otp,
+        otpExpiresAt=otp_expiry
     )
     
     doc = user.model_dump()
     doc['password'] = hashed_password
-    doc['createdAt'] = doc['createdAt'].isoformat()
+    doc['createdAt'] = datetime.now(timezone.utc).isoformat()
+    if doc.get('otpExpiresAt'):
+        doc['otpExpiresAt'] = doc['otpExpiresAt'].isoformat()
     
     await db.users.insert_one(doc)
     
-    # Send verification email (optional - user can login without verification)
-    email_sent = await send_verification_email(user.email, verification_token, user.firstName)
+    # Send OTP email
+    email_sent = await send_otp_email(user.email, otp, user.firstName)
     
+    return {
+        "message": "Registration successful! Please check your email for OTP to verify your account.",
+        "email": user.email,
+        "emailSent": email_sent,
+        "requiresOTP": True
+    }
+
+@api_router.post("/auth/verify-otp")
+async def verify_otp(request: OTPVerificationRequest):
+    """Verify OTP and complete registration"""
+    user_doc = await db.users.find_one({"email": request.email}, {"_id": 0})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user_doc.get('emailVerified', False):
+        raise HTTPException(status_code=400, detail="Email already verified")
+    
+    # Check if OTP exists
+    if not user_doc.get('emailOTP'):
+        raise HTTPException(status_code=400, detail="No OTP found. Please request a new one.")
+    
+    # Check if OTP is expired
+    otp_expiry = user_doc.get('otpExpiresAt')
+    if otp_expiry:
+        if isinstance(otp_expiry, str):
+            otp_expiry = datetime.fromisoformat(otp_expiry.replace('Z', '+00:00'))
+        if datetime.now(timezone.utc) > otp_expiry:
+            raise HTTPException(status_code=400, detail="OTP has expired. Please request a new one.")
+    
+    # Verify OTP
+    if user_doc['emailOTP'] != request.otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP. Please try again.")
+    
+    # Update user as verified and remove OTP
+    await db.users.update_one(
+        {"email": request.email},
+        {
+            "$set": {"emailVerified": True},
+            "$unset": {"emailOTP": "", "otpExpiresAt": ""}
+        }
+    )
+    
+    # Create welcome notification
     welcome_notif = Notification(
-        userId=user.id,
-        message=f"Welcome to Raama, {user.firstName}! Start your poetic journey.",
+        userId=user_doc['id'],
+        message=f"Welcome to Raama, {user_doc['firstName']}! Your email has been verified successfully.",
         type="welcome"
     )
     notif_doc = welcome_notif.model_dump()
     notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
     await db.notifications.insert_one(notif_doc)
     
-    # Create token for immediate login
+    # Create token for login
+    user = User(**{k: v for k, v in user_doc.items() if k != 'password'})
+    user.emailVerified = True
     token = create_access_token({"sub": user.id})
     
     return {
         "token": token,
         "user": user,
-        "message": "Registration successful! Please check your email to verify your account.",
+        "message": "Email verified successfully! Welcome to रामा!"
+    }
+
+@api_router.post("/auth/resend-otp")
+async def resend_otp(request: ResendOTPRequest):
+    """Resend OTP for email verification"""
+    user_doc = await db.users.find_one({"email": request.email}, {"_id": 0})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user_doc.get('emailVerified', False):
+        raise HTTPException(status_code=400, detail="Email already verified")
+    
+    # Generate new OTP
+    otp = generate_otp()
+    otp_expiry = get_otp_expiry()
+    
+    # Update user with new OTP
+    await db.users.update_one(
+        {"email": request.email},
+        {
+            "$set": {
+                "emailOTP": otp,
+                "otpExpiresAt": otp_expiry.isoformat()
+            }
+        }
+    )
+    
+    # Send OTP email
+    email_sent = await send_otp_email(request.email, otp, user_doc['firstName'])
+    
+    return {
+        "message": "New OTP sent! Please check your email.",
         "emailSent": email_sent
     }
 

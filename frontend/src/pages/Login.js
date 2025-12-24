@@ -89,11 +89,19 @@ export default function Login() {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
       const response = await axios.post(`${API}${endpoint}`, formData);
       
-      // Both login and registration now return token and user
-      setTokenInStorage(response.data.token);
-      setUserInStorage(response.data.user);
-      toast.success(isLogin ? 'Welcome back!' : 'Registration successful! Please check your email to verify your account.');
-      navigate('/');
+      if (isLogin) {
+        // Login successful
+        setTokenInStorage(response.data.token);
+        setUserInStorage(response.data.user);
+        toast.success('Welcome back!');
+        navigate('/');
+      } else {
+        // Registration successful - redirect to OTP verification
+        toast.success('Registration successful! Please check your email for OTP.');
+        navigate('/verify-otp', { 
+          state: { email: formData.email }
+        });
+      }
     } catch (error) {
       const errorMessage = error.response?.data?.detail || 'Something went wrong';
       

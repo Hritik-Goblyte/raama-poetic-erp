@@ -3,6 +3,7 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "@/pages/Login";
 import EmailVerification from "@/pages/EmailVerification";
+import OTPVerification from "@/pages/OTPVerification";
 import Dashboard from "@/pages/Dashboard";
 import MyShayari from "@/pages/MyShayari";
 import Writers from "@/pages/Writers";
@@ -49,6 +50,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/verify-email" element={<EmailVerification />} />
+          <Route path="/verify-otp" element={<OTPVerification />} />
           <Route path="/" element={
             <ProtectedRoute>
               <Dashboard theme={theme} setTheme={setTheme} />
