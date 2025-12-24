@@ -227,48 +227,53 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="bg-gray-900/95 backdrop-blur-xl border-orange-500/30 max-w-4xl max-h-[95vh] w-[98vw] lg:w-full p-0 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-300 m-1 lg:m-auto"
+        className="bg-gray-900/95 backdrop-blur-xl border-orange-500/30 max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[95vh] w-[95vw] sm:w-[90vw] lg:w-full p-0 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-300 m-2 sm:m-4 lg:m-auto"
         aria-describedby="shayari-modal-description"
       >
-        <div className="relative">
+        <div className="relative flex flex-col lg:flex-row h-full max-h-[95vh]">
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-gray-400 hover:text-white transition-all"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 p-1.5 sm:p-2 rounded-full bg-black/50 hover:bg-black/70 text-gray-400 hover:text-white transition-all"
           >
-            <X size={20} />
+            <X size={18} className="sm:w-5 sm:h-5" />
           </button>
 
-          {/* Fixed Header with Title */}
-          <div className="sticky top-0 bg-gradient-to-b from-gray-900 to-gray-900/90 backdrop-blur-sm border-b border-orange-500/20 p-4 lg:p-6 pb-4">
-            <h2 
-              className="text-xl lg:text-3xl font-bold text-orange-500 pr-12"
-              style={{ fontFamily: 'Macondo, cursive' }}
-            >
-              {shayari.title}
-            </h2>
-            <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
-              <span className="flex items-center gap-1">
-                <Calendar size={16} />
-                {format(new Date(shayari.createdAt), 'MMMM dd, yyyy')}
-              </span>
-              <span className="flex items-center gap-1">
-                <Heart size={16} className="text-orange-500" />
-                {shayari.likes} likes
-              </span>
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Header with Title */}
+            <div className="sticky top-0 bg-gradient-to-b from-gray-900 to-gray-900/90 backdrop-blur-sm border-b border-orange-500/20 p-3 sm:p-4 lg:p-6 pb-3 sm:pb-4">
+              <h2 
+                className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-orange-500 pr-8 sm:pr-12 leading-tight"
+                style={{ fontFamily: 'Macondo, cursive' }}
+              >
+                {shayari.title}
+              </h2>
+              <div className="flex items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-400">
+                <span className="flex items-center gap-1">
+                  <Calendar size={14} className="sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">
+                    {format(new Date(shayari.createdAt), 'MMMM dd, yyyy')}
+                  </span>
+                  <span className="sm:hidden">
+                    {format(new Date(shayari.createdAt), 'MMM dd, yyyy')}
+                  </span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <Heart size={14} className="sm:w-4 sm:h-4 text-orange-500" />
+                  {shayari.likes} likes
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* Scrollable Content Area */}
-          <div className="flex flex-col min-h-[300px] lg:min-h-[400px] max-h-[70vh] lg:max-h-[60vh]">
-            {/* Main Content - Scrollable */}
-            <div className="flex-1 p-4 lg:p-6 overflow-y-auto custom-scrollbar">
+            {/* Scrollable Content */}
+            <div className="flex-1 p-3 sm:p-4 lg:p-6 overflow-y-auto custom-scrollbar">
               {/* Original Content */}
               <div 
-                className={`text-gray-200 text-lg leading-relaxed whitespace-pre-line transition-opacity duration-300 ${showTranslation ? 'opacity-50' : 'opacity-100'}`}
+                className={`text-gray-200 text-base sm:text-lg lg:text-xl leading-relaxed whitespace-pre-line transition-opacity duration-300 ${showTranslation ? 'opacity-50' : 'opacity-100'}`}
                 style={{ 
                   fontFamily: 'Style Script, cursive', 
-                  fontSize: '1.3rem',
+                  fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)',
                   lineHeight: '1.8'
                 }}
               >
@@ -277,16 +282,16 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
 
               {/* Translation Content */}
               {showTranslation && translatedContent && (
-                <div className="mt-6 pt-6 border-t border-purple-500/20 animate-in fade-in-0 slide-in-from-top-4 duration-500">
-                  <div className="flex items-center gap-2 mb-4 bg-purple-500/10 p-3 rounded-lg border border-purple-500/20">
-                    <Languages size={20} className="text-purple-400" />
-                    <span className="text-purple-400 font-semibold">हिंदी अनुवाद (Hindi Translation)</span>
+                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-purple-500/20 animate-in fade-in-0 slide-in-from-top-4 duration-500">
+                  <div className="flex items-center gap-2 mb-3 sm:mb-4 bg-purple-500/10 p-2 sm:p-3 rounded-lg border border-purple-500/20">
+                    <Languages size={16} className="sm:w-5 sm:h-5 text-purple-400" />
+                    <span className="text-purple-400 font-semibold text-sm sm:text-base">हिंदी अनुवाद (Hindi Translation)</span>
                   </div>
                   <div 
-                    className="text-gray-200 text-lg leading-relaxed whitespace-pre-line bg-purple-500/5 p-4 rounded-lg"
+                    className="text-gray-200 text-base sm:text-lg lg:text-xl leading-relaxed whitespace-pre-line bg-purple-500/5 p-3 sm:p-4 rounded-lg"
                     style={{ 
                       fontFamily: 'Style Script, cursive', 
-                      fontSize: '1.3rem',
+                      fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)',
                       lineHeight: '1.8'
                     }}
                   >
@@ -295,8 +300,8 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
                 </div>
               )}
 
-              {/* Author Signature - Mobile Only */}
-              <div className="lg:hidden mt-6 pt-6 border-t border-orange-500/20">
+              {/* Mobile Author Section */}
+              <div className="lg:hidden mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-orange-500/20">
                 <div className="flex items-center gap-3 mb-3">
                   <div onClick={handleAuthorProfilePictureClick}>
                     <ProfilePicture 
@@ -309,218 +314,68 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
                     />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">
+                    <h3 className="font-semibold text-white text-sm sm:text-base">
                       {shayari.authorName}
                     </h3>
-                    <p className="text-orange-400 text-sm font-medium">@{shayari.authorUsername || 'Unknown'}</p>
+                    <p className="text-orange-400 text-xs sm:text-sm font-medium">@{shayari.authorUsername || 'Unknown'}</p>
                   </div>
                 </div>
                 
                 {/* Pen Name Signature */}
-                <div className="mt-3 p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                <div className="mt-3 p-2 sm:p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
                   <p 
-                    className="text-orange-400 text-right italic"
-                    style={{ fontFamily: 'Style Script, cursive', fontSize: '1rem' }}
+                    className="text-orange-400 text-right italic text-sm sm:text-base"
+                    style={{ fontFamily: 'Style Script, cursive' }}
                   >
                     ~ {getPenName()}
                   </p>
-                </div>
-              </div>
-
-              {/* Mobile Action Buttons - Compact Icons Below Content */}
-              <div className="lg:hidden mt-6 pt-4 border-t border-gray-700/50">
-                <div className="flex justify-center items-center gap-6 mb-4">
-                  <button
-                    onClick={handleLike}
-                    className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
-                      shayari.likedBy?.includes(currentUser.id)
-                        ? 'text-red-400'
-                        : 'text-gray-400 hover:text-red-400'
-                    }`}
-                  >
-                    <Heart 
-                      size={24} 
-                      className={`${shayari.likedBy?.includes(currentUser.id) ? 'fill-current' : ''}`} 
-                    />
-                    <span className="text-xs">{shayari.likes || 0}</span>
-                  </button>
-
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowShareOptions(!showShareOptions)}
-                      className="flex flex-col items-center gap-1 p-2 rounded-lg text-gray-400 hover:text-blue-400 transition-all"
-                    >
-                      <Share2 size={24} />
-                      <span className="text-xs">Share</span>
-                    </button>
-
-                    {/* Mobile Share Options */}
-                    {showShareOptions && (
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-10 min-w-[120px]">
-                        <button
-                          onClick={handleWhatsAppShare}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-green-400 hover:bg-gray-700 transition-all text-sm"
-                        >
-                          <MessageCircle size={16} />
-                          <span>WhatsApp</span>
-                        </button>
-                        <button
-                          onClick={handleShare}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-gray-400 hover:bg-gray-700 transition-all border-t border-gray-600 text-sm"
-                        >
-                          <Share2 size={16} />
-                          <span>Copy</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={handleSave}
-                    disabled={checkingBookmark}
-                    className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
-                      isBookmarked
-                        ? 'text-orange-400'
-                        : 'text-gray-400 hover:text-green-400'
-                    } ${checkingBookmark ? 'opacity-50' : ''}`}
-                  >
-                    <Bookmark 
-                      size={24} 
-                      className={`${isBookmarked ? 'fill-current' : ''}`} 
-                    />
-                    <span className="text-xs">
-                      {checkingBookmark ? '...' : isBookmarked ? 'Saved' : 'Save'}
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={handleTranslate}
-                    disabled={isTranslating}
-                    className="flex flex-col items-center gap-1 p-2 rounded-lg text-gray-400 hover:text-purple-400 transition-all disabled:opacity-50"
-                  >
-                    {isTranslating ? (
-                      <Loader2 size={24} className="animate-spin" />
-                    ) : (
-                      <Languages size={24} />
-                    )}
-                    <span className="text-xs">
-                      {isTranslating ? '...' : showTranslation ? 'Original' : 'Translate'}
-                    </span>
-                  </button>
-                </div>
-
-                {/* Mobile Stats */}
-                <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                  <div className="text-sm text-gray-400">
-                    Created {format(new Date(shayari.createdAt), 'MMM dd, yyyy')} • {shayari.likes || 0} likes
-                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Desktop Sidebar with Author and Actions */}
-            <div className="hidden lg:block lg:w-80 border-l border-orange-500/20 bg-black/20">
-              {/* Author Signature */}
-              <div className="p-6 border-b border-orange-500/20">
-                <div className="flex items-center gap-3 mb-3">
-                  <div onClick={handleAuthorProfilePictureClick}>
-                    <ProfilePicture 
-                      user={authorUser || { 
-                        firstName: shayari.authorName?.split(' ')[0] || 'Unknown',
-                        lastName: shayari.authorName?.split(' ')[1] || '',
-                        username: shayari.authorUsername 
-                      }} 
-                      size="lg" 
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-white text-lg">
-                      {shayari.authorName}
-                    </h3>
-                    <p className="text-orange-400 text-sm font-medium">@{shayari.authorUsername || 'Unknown'}</p>
-                    <p className="text-gray-400 text-sm">Poet</p>
-                  </div>
-                </div>
-                
-                {/* Pen Name Signature */}
-                <div className="mt-4 p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                  <p 
-                    className="text-orange-400 text-right italic"
-                    style={{ fontFamily: 'Style Script, cursive', fontSize: '1.1rem' }}
-                  >
-                    ~ {getPenName()}
-                  </p>
-                </div>
-              </div>
-
-              {/* Desktop Action Buttons */}
-              <div className="p-6 space-y-3">
+            {/* Mobile Action Bar */}
+            <div className="lg:hidden border-t border-gray-700/50 p-3 sm:p-4 bg-gray-900/50 backdrop-blur-sm">
+              <div className="flex justify-around items-center">
                 <button
                   onClick={handleLike}
-                  className={`w-full flex items-center justify-center gap-3 py-3 px-4 border rounded-lg transition-all group ${
+                  className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
                     shayari.likedBy?.includes(currentUser.id)
-                      ? 'bg-red-500/30 border-red-500/50 text-red-300'
-                      : 'bg-red-500/20 hover:bg-red-500/30 border-red-500/30 hover:border-red-500/50 text-red-400 hover:text-red-300'
+                      ? 'text-red-400'
+                      : 'text-gray-400 hover:text-red-400'
                   }`}
                 >
                   <Heart 
                     size={20} 
-                    className={`group-hover:scale-110 transition-transform ${
-                      shayari.likedBy?.includes(currentUser.id) ? 'fill-current' : ''
-                    }`} 
+                    className={`sm:w-6 sm:h-6 ${shayari.likedBy?.includes(currentUser.id) ? 'fill-current' : ''}`} 
                   />
-                  <span className="font-medium">
-                    {shayari.likedBy?.includes(currentUser.id) ? 'Liked' : 'Like'}
-                  </span>
-                  <span className="text-sm opacity-75">({shayari.likes || 0})</span>
+                  <span className="text-xs">{shayari.likes || 0}</span>
                 </button>
 
                 <div className="relative">
                   <button
                     onClick={() => setShowShareOptions(!showShareOptions)}
-                    className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 hover:border-blue-500/50 rounded-lg text-blue-400 hover:text-blue-300 transition-all group"
+                    className="flex flex-col items-center gap-1 p-2 rounded-lg text-gray-400 hover:text-blue-400 transition-all"
                   >
-                    <Share2 size={20} className="group-hover:scale-110 transition-transform" />
-                    <span className="font-medium">Share</span>
+                    <Share2 size={20} className="sm:w-6 sm:h-6" />
+                    <span className="text-xs">Share</span>
                   </button>
 
-                  {/* Desktop Share Options Dropdown */}
+                  {/* Mobile Share Dropdown */}
                   {showShareOptions && (
-                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-10">
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-10 min-w-[140px]">
                       <button
                         onClick={handleWhatsAppShare}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-green-400 hover:bg-gray-700 transition-all"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-green-400 hover:bg-gray-700 transition-all text-sm"
                       >
-                        <MessageCircle size={18} />
+                        <MessageCircle size={16} />
                         <span>WhatsApp</span>
                       </button>
                       <button
-                        onClick={() => handleSocialShare('twitter')}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-blue-400 hover:bg-gray-700 transition-all"
-                      >
-                        <Twitter size={18} />
-                        <span>Twitter</span>
-                      </button>
-                      <button
-                        onClick={() => handleSocialShare('facebook')}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-blue-600 hover:bg-gray-700 transition-all"
-                      >
-                        <Facebook size={18} />
-                        <span>Facebook</span>
-                      </button>
-                      <button
-                        onClick={() => handleSocialShare('instagram')}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-pink-400 hover:bg-gray-700 transition-all"
-                      >
-                        <Instagram size={18} />
-                        <span>Instagram</span>
-                      </button>
-                      <button
                         onClick={handleShare}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-700 transition-all border-t border-gray-600"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-gray-400 hover:bg-gray-700 transition-all border-t border-gray-600 text-sm"
                       >
-                        <Share2 size={18} />
-                        <span>Copy Text</span>
+                        <Share2 size={16} />
+                        <span>Copy</span>
                       </button>
                     </div>
                   )}
@@ -529,60 +384,211 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
                 <button
                   onClick={handleSave}
                   disabled={checkingBookmark}
-                  className={`w-full flex items-center justify-center gap-3 py-3 px-4 border rounded-lg transition-all group ${
+                  className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
                     isBookmarked
-                      ? 'bg-orange-500/30 border-orange-500/50 text-orange-300'
-                      : 'bg-green-500/20 hover:bg-green-500/30 border-green-500/30 hover:border-green-500/50 text-green-400 hover:text-green-300'
-                  } ${checkingBookmark ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      ? 'text-orange-400'
+                      : 'text-gray-400 hover:text-green-400'
+                  } ${checkingBookmark ? 'opacity-50' : ''}`}
                 >
                   <Bookmark 
                     size={20} 
-                    className={`group-hover:scale-110 transition-transform ${
-                      isBookmarked ? 'fill-current' : ''
-                    }`} 
+                    className={`sm:w-6 sm:h-6 ${isBookmarked ? 'fill-current' : ''}`} 
                   />
-                  <span className="font-medium">
-                    {checkingBookmark ? 'Loading...' : isBookmarked ? 'Bookmarked' : 'Bookmark'}
+                  <span className="text-xs">
+                    {checkingBookmark ? '...' : isBookmarked ? 'Saved' : 'Save'}
                   </span>
                 </button>
 
                 <button
                   onClick={handleTranslate}
                   disabled={isTranslating}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 hover:border-purple-500/50 rounded-lg text-purple-400 hover:text-purple-300 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={showTranslation ? 'Switch back to original text' : 'Translate Hinglish to Hindi'}
+                  className="flex flex-col items-center gap-1 p-2 rounded-lg text-gray-400 hover:text-purple-400 transition-all disabled:opacity-50"
                 >
                   {isTranslating ? (
-                    <Loader2 size={20} className="animate-spin" />
+                    <Loader2 size={20} className="sm:w-6 sm:h-6 animate-spin" />
                   ) : (
-                    <Languages size={20} className="group-hover:scale-110 transition-transform" />
+                    <Languages size={20} className="sm:w-6 sm:h-6" />
                   )}
-                  <span className="font-medium">
-                    {isTranslating ? 'Translating...' : showTranslation ? 'Show Original' : 'Translate'}
+                  <span className="text-xs">
+                    {isTranslating ? '...' : showTranslation ? 'Original' : 'Translate'}
                   </span>
                 </button>
+              </div>
+            </div>
+          </div>
 
-                {/* Translation Info */}
-                {!translatedContent && !isTranslating && (
-                  <div className="text-xs text-gray-500 text-center px-2">
-                    AI-powered Hinglish to Hindi translation
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:flex lg:flex-col lg:w-80 xl:w-96 border-l border-orange-500/20 bg-black/20 min-h-0">
+            {/* Author Section */}
+            <div className="p-6 border-b border-orange-500/20">
+              <div className="flex items-start gap-4 mb-4">
+                <div onClick={handleAuthorProfilePictureClick} className="cursor-pointer">
+                  <ProfilePicture 
+                    user={authorUser || { 
+                      firstName: shayari.authorName?.split(' ')[0] || 'Unknown',
+                      lastName: shayari.authorName?.split(' ')[1] || '',
+                      username: shayari.authorUsername 
+                    }} 
+                    size="xl" 
+                  />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-white text-lg xl:text-xl mb-1">
+                    {shayari.authorName}
+                  </h3>
+                  <p className="text-orange-400 text-sm xl:text-base font-medium mb-1">
+                    @{shayari.authorUsername || 'Unknown'}
+                  </p>
+                  <p className="text-gray-400 text-sm">Poet & Writer</p>
+                </div>
+              </div>
+              
+              {/* Pen Name Signature */}
+              <div className="p-4 bg-gradient-to-r from-orange-500/10 to-orange-600/10 rounded-xl border border-orange-500/20">
+                <p 
+                  className="text-orange-400 text-right italic text-lg xl:text-xl"
+                  style={{ fontFamily: 'Style Script, cursive' }}
+                >
+                  ~ {getPenName()}
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex-1 p-6 space-y-4 overflow-y-auto">
+              <button
+                onClick={handleLike}
+                className={`w-full flex items-center justify-between py-4 px-5 border-2 rounded-xl transition-all group font-medium ${
+                  shayari.likedBy?.includes(currentUser.id)
+                    ? 'bg-red-500/20 border-red-500/40 text-red-300 hover:bg-red-500/30'
+                    : 'bg-red-500/10 hover:bg-red-500/20 border-red-500/20 hover:border-red-500/40 text-red-400'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Heart 
+                    size={22} 
+                    className={`group-hover:scale-110 transition-transform ${
+                      shayari.likedBy?.includes(currentUser.id) ? 'fill-current' : ''
+                    }`} 
+                  />
+                  <span className="text-base xl:text-lg">
+                    {shayari.likedBy?.includes(currentUser.id) ? 'Liked' : 'Like'}
+                  </span>
+                </div>
+                <span className="text-sm xl:text-base opacity-75 bg-black/20 px-2 py-1 rounded-full">
+                  {shayari.likes || 0}
+                </span>
+              </button>
+
+              <div className="relative">
+                <button
+                  onClick={() => setShowShareOptions(!showShareOptions)}
+                  className="w-full flex items-center justify-center gap-3 py-4 px-5 bg-blue-500/10 hover:bg-blue-500/20 border-2 border-blue-500/20 hover:border-blue-500/40 rounded-xl text-blue-400 transition-all group font-medium"
+                >
+                  <Share2 size={22} className="group-hover:scale-110 transition-transform" />
+                  <span className="text-base xl:text-lg">Share Shayari</span>
+                </button>
+
+                {/* Desktop Share Dropdown */}
+                {showShareOptions && (
+                  <div className="absolute bottom-full left-0 right-0 mb-2 bg-gray-800/95 backdrop-blur-sm border border-gray-600 rounded-xl shadow-2xl z-10 overflow-hidden">
+                    <button
+                      onClick={handleWhatsAppShare}
+                      className="w-full flex items-center gap-3 px-5 py-4 text-green-400 hover:bg-gray-700/50 transition-all"
+                    >
+                      <MessageCircle size={20} />
+                      <span className="font-medium">WhatsApp</span>
+                    </button>
+                    <button
+                      onClick={() => handleSocialShare('twitter')}
+                      className="w-full flex items-center gap-3 px-5 py-4 text-blue-400 hover:bg-gray-700/50 transition-all border-t border-gray-700"
+                    >
+                      <Twitter size={20} />
+                      <span className="font-medium">Twitter</span>
+                    </button>
+                    <button
+                      onClick={() => handleSocialShare('facebook')}
+                      className="w-full flex items-center gap-3 px-5 py-4 text-blue-600 hover:bg-gray-700/50 transition-all border-t border-gray-700"
+                    >
+                      <Facebook size={20} />
+                      <span className="font-medium">Facebook</span>
+                    </button>
+                    <button
+                      onClick={handleShare}
+                      className="w-full flex items-center gap-3 px-5 py-4 text-gray-400 hover:bg-gray-700/50 transition-all border-t border-gray-700"
+                    >
+                      <Share2 size={20} />
+                      <span className="font-medium">Copy Text</span>
+                    </button>
                   </div>
                 )}
               </div>
 
-              {/* Desktop Stats */}
-              <div className="p-6 pt-0">
-                <div className="bg-gray-800/50 rounded-lg p-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Created</span>
-                    <span className="text-gray-300">
-                      {format(new Date(shayari.createdAt), 'MMM dd, yyyy')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Likes</span>
-                    <span className="text-orange-400 font-medium">{shayari.likes}</span>
-                  </div>
+              <button
+                onClick={handleSave}
+                disabled={checkingBookmark}
+                className={`w-full flex items-center justify-center gap-3 py-4 px-5 border-2 rounded-xl transition-all group font-medium ${
+                  isBookmarked
+                    ? 'bg-orange-500/20 border-orange-500/40 text-orange-300 hover:bg-orange-500/30'
+                    : 'bg-green-500/10 hover:bg-green-500/20 border-green-500/20 hover:border-green-500/40 text-green-400'
+                } ${checkingBookmark ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <Bookmark 
+                  size={22} 
+                  className={`group-hover:scale-110 transition-transform ${
+                    isBookmarked ? 'fill-current' : ''
+                  }`} 
+                />
+                <span className="text-base xl:text-lg">
+                  {checkingBookmark ? 'Loading...' : isBookmarked ? 'Bookmarked' : 'Bookmark'}
+                </span>
+              </button>
+
+              <button
+                onClick={handleTranslate}
+                disabled={isTranslating}
+                className="w-full flex items-center justify-center gap-3 py-4 px-5 bg-purple-500/10 hover:bg-purple-500/20 border-2 border-purple-500/20 hover:border-purple-500/40 rounded-xl text-purple-400 transition-all group disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                title={showTranslation ? 'Switch back to original text' : 'Translate Hinglish to Hindi'}
+              >
+                {isTranslating ? (
+                  <Loader2 size={22} className="animate-spin" />
+                ) : (
+                  <Languages size={22} className="group-hover:scale-110 transition-transform" />
+                )}
+                <span className="text-base xl:text-lg">
+                  {isTranslating ? 'Translating...' : showTranslation ? 'Show Original' : 'Translate'}
+                </span>
+              </button>
+
+              {/* Translation Info */}
+              {!translatedContent && !isTranslating && (
+                <div className="text-xs xl:text-sm text-gray-500 text-center px-2 py-2 bg-gray-800/30 rounded-lg">
+                  AI-powered Hinglish to Hindi translation
+                </div>
+              )}
+            </div>
+
+            {/* Stats Section */}
+            <div className="p-6 pt-0">
+              <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl p-5 space-y-3 border border-gray-700/30">
+                <h4 className="text-gray-300 font-semibold text-sm xl:text-base mb-3">Statistics</h4>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 text-sm xl:text-base">Created</span>
+                  <span className="text-gray-300 text-sm xl:text-base font-medium">
+                    {format(new Date(shayari.createdAt), 'MMM dd, yyyy')}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 text-sm xl:text-base">Likes</span>
+                  <span className="text-orange-400 font-bold text-base xl:text-lg">
+                    {shayari.likes || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 text-sm xl:text-base">Shares</span>
+                  <span className="text-blue-400 font-medium text-sm xl:text-base">
+                    {shayari.shares || 0}
+                  </span>
                 </div>
               </div>
             </div>
