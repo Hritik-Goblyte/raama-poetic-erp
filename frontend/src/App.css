@@ -195,6 +195,49 @@ body {
     margin: 1rem;
     max-height: calc(100vh - 2rem);
   }
+  
+  /* Better mobile form inputs */
+  input, textarea, select {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.75rem 1rem;
+  }
+  
+  /* Mobile-optimized OTP inputs */
+  input[inputmode="numeric"] {
+    font-size: 1.25rem;
+    padding: 0.75rem 0.5rem;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  /* Smaller padding for very small screens */
+  .glass-card {
+    padding: 0.75rem;
+    margin: 0.5rem;
+  }
+  
+  /* Adjust OTP input sizes for small screens */
+  input[inputmode="numeric"] {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1rem;
+  }
+  
+  /* Smaller buttons on very small screens */
+  button {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Compact spacing */
+  .space-y-3 > * + * {
+    margin-top: 0.75rem;
+  }
+  
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
 }
 
 /* Hide scrollbar utility */

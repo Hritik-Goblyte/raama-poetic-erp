@@ -153,29 +153,29 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8" style={{
       background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)'
     }}>
-      <div className="w-full max-w-md p-6 lg:p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl lg:text-6xl font-bold mb-2" style={{ 
+      <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg xl:max-w-xl">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2" style={{ 
             fontFamily: 'Tillana, cursive',
             color: '#ff6b35',
             textShadow: '0 0 30px rgba(255, 107, 53, 0.5)'
           }}>
             रामा..!
           </h1>
-          <p className="text-gray-400 text-lg" style={{ fontFamily: 'Macondo, cursive' }}>
+          <p className="text-sm sm:text-base lg:text-lg text-gray-400" style={{ fontFamily: 'Macondo, cursive' }}>
             The Poetic ERP
           </p>
         </div>
 
-        <div className="glass-card p-6 lg:p-8">
-          <div className="flex gap-2 mb-6">
+        <div className="glass-card p-4 sm:p-6 lg:p-8">
+          <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6">
             <button
               data-testid="login-tab"
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-2 rounded-lg font-semibold transition-all ${
+              className={`flex-1 py-2 sm:py-3 px-2 sm:px-4 rounded-lg font-semibold transition-all text-sm sm:text-base ${
                 isLogin ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-white'
               }`}
             >
@@ -184,7 +184,7 @@ export default function Login() {
             <button
               data-testid="register-tab"
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-2 rounded-lg font-semibold transition-all ${
+              className={`flex-1 py-2 sm:py-3 px-2 sm:px-4 rounded-lg font-semibold transition-all text-sm sm:text-base ${
                 !isLogin ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-white'
               }`}
             >
@@ -192,30 +192,32 @@ export default function Login() {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             {!isLogin && (
               <>
-                <div>
-                  <input
-                    data-testid="firstName-input"
-                    type="text"
-                    placeholder="First Name"
-                    required
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                    className="w-full px-4 py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <input
-                    data-testid="lastName-input"
-                    type="text"
-                    placeholder="Last Name"
-                    required
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                    className="w-full px-4 py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <input
+                      data-testid="firstName-input"
+                      type="text"
+                      placeholder="First Name"
+                      required
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none text-sm sm:text-base"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      data-testid="lastName-input"
+                      type="text"
+                      placeholder="Last Name"
+                      required
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none text-sm sm:text-base"
+                    />
+                  </div>
                 </div>
                 <div>
                   <div className="relative">
@@ -226,24 +228,24 @@ export default function Login() {
                       required
                       value={formData.username}
                       onChange={handleUsernameChange}
-                      className={`w-full px-4 py-3 pr-12 bg-black/30 border rounded-lg text-white placeholder-gray-500 focus:outline-none ${
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 bg-black/30 border rounded-lg text-white placeholder-gray-500 focus:outline-none text-sm sm:text-base ${
                         usernameStatus.available === true ? 'border-green-500 focus:border-green-500' :
                         usernameStatus.available === false ? 'border-red-500 focus:border-red-500' :
                         'border-gray-700 focus:border-orange-500'
                       }`}
                     />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2">
                       {usernameStatus.checking ? (
-                        <Loader2 size={20} className="animate-spin text-orange-500" />
+                        <Loader2 size={16} className="sm:w-5 sm:h-5 animate-spin text-orange-500" />
                       ) : usernameStatus.available === true ? (
-                        <CheckCircle size={20} className="text-green-500" />
+                        <CheckCircle size={16} className="sm:w-5 sm:h-5 text-green-500" />
                       ) : usernameStatus.available === false ? (
-                        <XCircle size={20} className="text-red-500" />
+                        <XCircle size={16} className="sm:w-5 sm:h-5 text-red-500" />
                       ) : null}
                     </div>
                   </div>
                   {usernameStatus.message && (
-                    <p className={`text-sm mt-1 ${
+                    <p className={`text-xs sm:text-sm mt-1 ${
                       usernameStatus.available === true ? 'text-green-500' :
                       usernameStatus.available === false ? 'text-red-500' :
                       'text-gray-400'
@@ -257,7 +259,7 @@ export default function Login() {
                     data-testid="role-select"
                     value={formData.role}
                     onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    className="w-full px-4 py-3 bg-black/30 border border-gray-700 rounded-lg text-white focus:border-orange-500 focus:outline-none"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-black/30 border border-gray-700 rounded-lg text-white focus:border-orange-500 focus:outline-none text-sm sm:text-base"
                   >
                     <option value="reader">Reader</option>
                   </select>
@@ -273,7 +275,7 @@ export default function Login() {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full px-4 py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none text-sm sm:text-base"
               />
             </div>
             
@@ -285,43 +287,43 @@ export default function Login() {
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="w-full px-4 py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none text-sm sm:text-base"
               />
               <button
                 data-testid="toggle-password"
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPassword ? <EyeOff size={16} className="sm:w-5 sm:h-5" /> : <Eye size={16} className="sm:w-5 sm:h-5" />}
               </button>
             </div>
 
             <button
               data-testid="submit-button"
               type="submit"
-              className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-all hover:shadow-lg hover:shadow-orange-500/50"
+              className="w-full py-2 sm:py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-all hover:shadow-lg hover:shadow-orange-500/50 text-sm sm:text-base"
             >
               {isLogin ? 'Login' : 'Register'}
             </button>
           </form>
 
           {emailVerificationError && isLogin && (
-            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <p className="text-red-400 text-sm mb-2">
+            <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-red-400 text-xs sm:text-sm mb-2">
                 Your email address is not verified.
               </p>
-              <p className="text-gray-400 text-xs mb-3">
-                Email: <span className="text-orange-500">{formData.email}</span>
+              <p className="text-gray-400 text-xs mb-2 sm:mb-3">
+                Email: <span className="text-orange-500 break-all">{formData.email}</span>
               </p>
               <button
                 onClick={handleResendVerification}
                 disabled={resendingEmail || !formData.email}
-                className="w-full py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+                className="w-full py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
               >
                 {resendingEmail ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" />
+                    <Loader2 size={14} className="sm:w-4 sm:h-4 animate-spin" />
                     Sending OTP...
                   </>
                 ) : (
@@ -331,15 +333,15 @@ export default function Login() {
             </div>
           )}
 
-          <div className="mt-6 text-center text-sm text-gray-400">
-            <p>Demo Accounts:</p>
-            <p>Writer: writer@raama.com / password123</p>
-            <p>Reader: reader@raama.com / password123</p>
+          <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-gray-400">
+            <p className="mb-1">Demo Accounts:</p>
+            <p className="mb-1">Writer: writer@raama.com / password123</p>
+            <p className="mb-2">Reader: reader@raama.com / password123</p>
             
             {/* Debug button for testing OTP page */}
             <button
               onClick={() => navigate('/verify-otp', { state: { email: 'test@example.com' } })}
-              className="mt-4 text-xs text-orange-500 hover:text-orange-400"
+              className="text-xs text-orange-500 hover:text-orange-400"
             >
               [Debug: Test OTP Page]
             </button>
