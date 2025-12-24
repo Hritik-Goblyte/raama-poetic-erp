@@ -22,6 +22,8 @@ export default function Login() {
     role: 'reader'
   });
   const [usernameStatus, setUsernameStatus] = useState({ checking: false, available: null, message: '' });
+  const [emailVerificationError, setEmailVerificationError] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
 
   // Check for email verification token in URL (optional - users can login without verification)
   useEffect(() => {
@@ -75,6 +77,7 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setEmailVerificationError(false);
     
     // Check username availability before registration
     if (!isLogin && (!usernameStatus.available && formData.username)) {
@@ -89,11 +92,38 @@ export default function Login() {
       // Both login and registration now return token and user
       setTokenInStorage(response.data.token);
       setUserInStorage(response.data.user);
-      toast.success(isLogin ? 'Welcome back!' : 'Registration successful! Welcome to रामा!');
+      toast.success(isLogin ? 'Welcome back!' : 'Registration successful! Please check your email to verify your account.');
       navigate('/');
     } catch (error) {
       const errorMessage = error.response?.data?.detail || 'Something went wrong';
+      
+      // Check if it's an email verification error
+      if (error.response?.status === 403 && errorMessage.includes('verify your email')) {
+        setEmailVerificationError(true);
+      }
+      
       toast.error(errorMessage);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!formData.email || !formData.password) {
+      toast.error('Please enter your email and password');
+      return;
+    }
+
+    setResendingEmail(true);
+    try {
+      await axios.post(`${API}/auth/resend-verification`, {
+        email: formData.email,
+        password: formData.password
+      });
+      toast.success('Verification email sent! Check your inbox.');
+      setEmailVerificationError(false);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to send verification email');
+    } finally {
+      setResendingEmail(false);
     }
   };
 
@@ -250,6 +280,28 @@ export default function Login() {
               {isLogin ? 'Login' : 'Register'}
             </button>
           </form>
+
+          {emailVerificationError && isLogin && (
+            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-red-400 text-sm mb-3">
+                Your email address is not verified. Please check your inbox for the verification link.
+              </p>
+              <button
+                onClick={handleResendVerification}
+                disabled={resendingEmail}
+                className="w-full py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+              >
+                {resendingEmail ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  'Resend Verification Email'
+                )}
+              </button>
+            </div>
+          )}
 
           <div className="mt-6 text-center text-sm text-gray-400">
             <p>Demo Accounts:</p>

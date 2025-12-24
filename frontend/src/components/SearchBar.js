@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Clock, TrendingUp, Hash, X } from 'lucide-react';
+import { Search, X, User, BookOpen, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
@@ -8,195 +8,163 @@ const API = `${BACKEND_URL}/api`;
 export default function SearchBar({ onSearch, onClose }) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState({
-    recentSearches: [],
-    popularSearches: [],
-    trendingTags: []
+    shayaris: [],
+    writers: []
   });
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
-  const inputRef = useRef(null);
-  const token = localStorage.getItem('raama-token');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef(null);
 
   useEffect(() => {
-    fetchSuggestions();
-    if (inputRef.current) {
-      inputRef.current.focus();
+    if (query.length > 2) {
+      searchContent();
+    } else {
+      setSuggestions({ shayaris: [], writers: [] });
+      setShowSuggestions(false);
     }
+  }, [query]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchSuggestions = async () => {
-    try {
-      const response = await axios.get(`${API}/search/suggestions`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSuggestions(response.data);
-    } catch (error) {
-      console.error('Error fetching suggestions:', error);
-    }
-  };
-
-  const handleSearch = async (searchQuery = query) => {
-    if (!searchQuery.trim()) return;
-    
+  const searchContent = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API}/search/shayaris`, {
-        params: { q: searchQuery },
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/search?q=${encodeURIComponent(query)}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      onSearch(response.data, searchQuery);
-      setShowSuggestions(false);
+      setSuggestions(response.data);
+      setShowSuggestions(true);
     } catch (error) {
       console.error('Search error:', error);
+      setSuggestions({ shayaris: [], writers: [] });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSuggestionClick = (suggestion) => {
-    setQuery(suggestion);
-    handleSearch(suggestion);
+  const handleSearch = (searchQuery = query) => {
+    if (searchQuery.trim()) {
+      onSearch(searchQuery.trim());
+      setShowSuggestions(false);
+    }
   };
 
-  const clearSearchHistory = async () => {
-    try {
-      await axios.delete(`${API}/search/history`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSuggestions(prev => ({ ...prev, recentSearches: [] }));
-    } catch (error) {
-      console.error('Error clearing search history:', error);
+  const handleSuggestionClick = (item, type) => {
+    if (type === 'shayari') {
+      setQuery(item.title);
+      handleSearch(item.title);
+    } else if (type === 'writer') {
+      setQuery(item.username);
+      handleSearch(item.username);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-20">
-      <div className="w-full max-w-2xl mx-4">
-        {/* Search Input */}
-        <div className="glass-card p-6 mb-4">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder="Search shayaris, authors, or tags..."
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setShowSuggestions(true);
-                }}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
-                  }
-                }}
-                className="w-full pl-10 pr-4 py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
-              />
-            </div>
+    <div ref={searchRef} className="relative w-full max-w-md">
+      <div className="relative">
+        <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search shayaris, writers..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+          className="w-full pl-10 pr-20 py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+        />
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+          {loading && <Loader2 size={16} className="animate-spin text-orange-500" />}
+          {query && (
             <button
-              onClick={() => handleSearch()}
-              disabled={loading}
-              className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+              onClick={() => {
+                setQuery('');
+                setSuggestions({ shayaris: [], writers: [] });
+                setShowSuggestions(false);
+              }}
+              className="p-1 text-gray-400 hover:text-white"
             >
-              {loading ? 'Searching...' : 'Search'}
+              <X size={16} />
             </button>
+          )}
+          {onClose && (
             <button
               onClick={onClose}
-              className="p-3 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+              className="p-1 text-gray-400 hover:text-white"
             >
-              <X size={20} />
+              <X size={16} />
             </button>
-          </div>
+          )}
         </div>
-
-        {/* Suggestions */}
-        {showSuggestions && (
-          <div className="glass-card p-6 max-h-96 overflow-y-auto">
-            {/* Recent Searches */}
-            {suggestions.recentSearches.length > 0 && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-gray-300 flex items-center gap-2">
-                    <Clock size={18} />
-                    Recent Searches
-                  </h3>
-                  <button
-                    onClick={clearSearchHistory}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    Clear
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {suggestions.recentSearches.map((search, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSuggestionClick(search)}
-                      className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm transition-all"
-                    >
-                      {search}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Popular Searches */}
-            {suggestions.popularSearches.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-300 mb-3 flex items-center gap-2">
-                  <TrendingUp size={18} />
-                  Popular Searches
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {suggestions.popularSearches.map((search, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSuggestionClick(search)}
-                      className="px-3 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 rounded-lg text-sm transition-all"
-                    >
-                      {search}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Trending Tags */}
-            {suggestions.trendingTags.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-300 mb-3 flex items-center gap-2">
-                  <Hash size={18} />
-                  Trending Tags
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {suggestions.trendingTags.map((tag, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSuggestionClick(tag)}
-                      className="px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg text-sm transition-all"
-                    >
-                      #{tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* No suggestions */}
-            {suggestions.recentSearches.length === 0 && 
-             suggestions.popularSearches.length === 0 && 
-             suggestions.trendingTags.length === 0 && (
-              <div className="text-center py-8 text-gray-400">
-                <Search size={48} className="mx-auto mb-4 opacity-50" />
-                <p>Start typing to search for shayaris...</p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
+
+      {showSuggestions && (suggestions.shayaris.length > 0 || suggestions.writers.length > 0) && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-black/90 backdrop-blur-md border border-gray-700 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+          {suggestions.writers.length > 0 && (
+            <div className="p-3 border-b border-gray-700">
+              <h4 className="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2">
+                <User size={14} />
+                Writers
+              </h4>
+              {suggestions.writers.map((writer) => (
+                <button
+                  key={writer.id}
+                  onClick={() => handleSuggestionClick(writer, 'writer')}
+                  className="w-full text-left p-2 hover:bg-orange-500/10 rounded-lg transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-orange-500/20 rounded-full flex items-center justify-center">
+                      <User size={14} className="text-orange-500" />
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">{writer.username}</p>
+                      <p className="text-gray-400 text-sm">{writer.firstName} {writer.lastName}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {suggestions.shayaris.length > 0 && (
+            <div className="p-3">
+              <h4 className="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2">
+                <BookOpen size={14} />
+                Shayaris
+              </h4>
+              {suggestions.shayaris.map((shayari) => (
+                <button
+                  key={shayari.id}
+                  onClick={() => handleSuggestionClick(shayari, 'shayari')}
+                  className="w-full text-left p-2 hover:bg-orange-500/10 rounded-lg transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-orange-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <BookOpen size={14} className="text-orange-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-medium truncate">{shayari.title}</p>
+                      <p className="text-gray-400 text-sm">by {shayari.authorName}</p>
+                      <p className="text-gray-500 text-xs line-clamp-2 mt-1">
+                        {shayari.content.substring(0, 100)}...
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -49,7 +49,7 @@ ALGORITHM = "HS256"
 # EmailJS configuration
 EMAILJS_SERVICE_ID = os.environ.get('EMAILJS_SERVICE_ID', '')
 EMAILJS_TEMPLATE_ID = os.environ.get('EMAILJS_TEMPLATE_ID', '')
-EMAILJS_PRIVATE_KEY = os.environ.get('EMAILJS_PUBLIC_KEY', '')
+EMAILJS_PUBLIC_KEY = os.environ.get('EMAILJS_PUBLIC_KEY', '')
 FROM_EMAIL = os.environ.get('FROM_EMAIL', 'noreply@raama.com')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
@@ -460,7 +460,7 @@ async def register(user_data: UserCreate):
     return {
         "token": token,
         "user": user,
-        "message": "Registration successful! Welcome to रामा!",
+        "message": "Registration successful! Please check your email to verify your account.",
         "emailSent": email_sent
     }
 
@@ -501,12 +501,12 @@ async def login(credentials: UserLogin):
     if not pwd_context.verify(credentials.password, user_doc['password']):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Email verification disabled - users can login without verification
-    # if not user_doc.get('emailVerified', False):
-    #     raise HTTPException(
-    #         status_code=403, 
-    #         detail="Please verify your email address before logging in. Check your inbox for the verification link."
-    #     )
+    # Check email verification requirement
+    if not user_doc.get('emailVerified', False):
+        raise HTTPException(
+            status_code=403, 
+            detail="Please verify your email address before logging in. Check your inbox for the verification link."
+        )
     
     user = User(**{k: v for k, v in user_doc.items() if k != 'password'})
     token = create_access_token({"sub": user.id})
@@ -1650,6 +1650,52 @@ async def unfeature_shayari(shayari_id: str, admin_user: User = Depends(get_admi
     return {"message": "Shayari unfeatured successfully"}
 
 # Search endpoints
+@api_router.get("/search")
+async def search_content(
+    q: str = "",
+    limit: int = 10,
+    current_user: User = Depends(get_current_user)
+):
+    """General search endpoint for shayaris and writers"""
+    if not q or len(q.strip()) < 2:
+        return {"shayaris": [], "writers": []}
+    
+    search_term = q.strip()
+    
+    # Search shayaris
+    shayari_query = {
+        "$or": [
+            {"title": {"$regex": search_term, "$options": "i"}},
+            {"content": {"$regex": search_term, "$options": "i"}},
+            {"authorName": {"$regex": search_term, "$options": "i"}},
+            {"authorUsername": {"$regex": search_term, "$options": "i"}}
+        ]
+    }
+    
+    shayaris_cursor = db.shayaris.find(shayari_query, {"_id": 0}).limit(limit)
+    shayaris = await shayaris_cursor.to_list(length=limit)
+    
+    # Search writers
+    writer_query = {
+        "$or": [
+            {"username": {"$regex": search_term, "$options": "i"}},
+            {"firstName": {"$regex": search_term, "$options": "i"}},
+            {"lastName": {"$regex": search_term, "$options": "i"}}
+        ],
+        "role": {"$in": ["writer", "admin"]}
+    }
+    
+    writers_cursor = db.users.find(
+        writer_query, 
+        {"_id": 0, "password": 0, "emailVerificationToken": 0, "adminSecret": 0}
+    ).limit(limit)
+    writers = await writers_cursor.to_list(length=limit)
+    
+    return {
+        "shayaris": shayaris,
+        "writers": writers
+    }
+
 @api_router.get("/search/shayaris")
 async def search_shayaris(
     q: str = "",
