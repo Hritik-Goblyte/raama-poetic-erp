@@ -24,40 +24,30 @@ EmailJS allows you to send emails directly from the frontend or backend without 
 
 1. Go to **Email Templates** in your dashboard
 2. Click **Create New Template**
-3. Use this template content for **OTP emails**:
+3. **Choose Template Type:**
 
-```html
-Subject: Your रामा Verification Code
+#### Option A: HTML Template (Recommended - Beautiful Design)
+- Copy the content from `EMAILJS_TEMPLATE.html` file
+- This creates a beautiful, branded email with रामा styling
 
-Hello {{user_name}},
+#### Option B: Simple Text Template (Fallback)
+- Copy the content from `EMAILJS_TEMPLATE_SIMPLE.txt` file  
+- This creates a simple text-based email
 
-Welcome to रामा..! - The Poetic ERP Platform.
-
-Your email verification code is:
-
-{{otp_code}}
-
-This code will expire in {{expiry_time}}.
-
-Please enter this code on the verification page to complete your registration.
-
-If you didn't create an account, please ignore this email.
-
-Best regards,
-The रामा Team
-{{from_email}}
-```
-
-4. Save the template and note down your **Template ID**
-
-### Step 3b: Template Variables
-
-Make sure your EmailJS template includes these variables:
+#### Template Variables (Required):
+Make sure your template includes these variables:
 - `{{user_name}}` - User's first name
 - `{{otp_code}}` - 6-digit verification code
 - `{{expiry_time}}` - "10 minutes"
 - `{{from_name}}` - "रामा Team"
 - `{{from_email}}` - Your configured from email
+
+4. **Test the Template:**
+   - Use EmailJS template tester
+   - Send a test email to yourself
+   - Verify all variables are working
+
+5. Save the template and note down your **Template ID**
 
 ### Step 4: Get Public and Private Keys
 
@@ -111,6 +101,31 @@ FRONTEND_URL="http://localhost:3000"
 ```
 
 **Note:** For Gmail, you'll need to use an App Password instead of your regular password.
+
+## 📧 Email Templates Provided
+
+This project includes two ready-to-use EmailJS templates:
+
+### 1. **EMAILJS_TEMPLATE.html** (Recommended)
+- **Beautiful HTML design** with रामा branding
+- **Dark theme** matching the app design
+- **Glassmorphism effects** and orange accent colors
+- **Responsive design** for all devices
+- **Professional layout** with security notices
+
+### 2. **EMAILJS_TEMPLATE_SIMPLE.txt** (Fallback)
+- **Simple text format** for maximum compatibility
+- **All essential information** included
+- **Works with any email client**
+- **Lightweight and fast**
+
+### Template Features:
+- ✅ **Branded Design** - Matches रामा app theme
+- ✅ **Security Notices** - Warns users about code safety
+- ✅ **Clear Instructions** - Step-by-step verification guide
+- ✅ **Professional Footer** - Contact information and branding
+- ✅ **Responsive Layout** - Works on mobile and desktop
+- ✅ **Hindi/English Mix** - Cultural authenticity
 
 ## 📧 How Email Verification Works (OTP System)
 

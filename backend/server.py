@@ -121,6 +121,7 @@ async def send_otp_email(email: str, otp: str, name: str):
             email_data["accessToken"] = EMAILJS_PRIVATE_KEY
         
         logger.info("Sending OTP email via EmailJS API...")
+        logger.info(f"Email data being sent: {json.dumps(email_data, indent=2)}")
         
         async with aiohttp.ClientSession() as session:
             async with session.post(
@@ -730,6 +731,50 @@ async def resend_verification_email(credentials: UserLogin):
         "message": "Verification email sent! Please check your inbox.",
         "emailSent": email_sent
     }
+
+@api_router.post("/auth/test-email-debug")
+async def test_email_debug(email: str = "test@example.com"):
+    """Debug EmailJS configuration and test email sending"""
+    try:
+        logger.info("=== EmailJS Debug Test ===")
+        logger.info(f"Service ID: {EMAILJS_SERVICE_ID}")
+        logger.info(f"Template ID: {EMAILJS_TEMPLATE_ID}")
+        logger.info(f"Public Key: {EMAILJS_PUBLIC_KEY[:10]}..." if EMAILJS_PUBLIC_KEY else "Not set")
+        logger.info(f"Private Key: {'Set' if EMAILJS_PRIVATE_KEY else 'Not set'}")
+        logger.info(f"From Email: {FROM_EMAIL}")
+        
+        # Generate test OTP
+        test_otp = generate_otp()
+        
+        # Send test email
+        result = await send_otp_email(email, test_otp, "Test User")
+        
+        return {
+            "success": result,
+            "message": "Test email sent" if result else "Test email failed",
+            "test_otp": test_otp,
+            "config": {
+                "emailjs_service_id": EMAILJS_SERVICE_ID,
+                "emailjs_template_id": EMAILJS_TEMPLATE_ID,
+                "emailjs_public_key_set": bool(EMAILJS_PUBLIC_KEY),
+                "emailjs_private_key_set": bool(EMAILJS_PRIVATE_KEY),
+                "from_email": FROM_EMAIL,
+                "frontend_url": FRONTEND_URL
+            },
+            "instructions": [
+                "1. Check your email inbox and spam folder",
+                "2. If no email received, check EmailJS template 'To' field should be {{to_email}}",
+                "3. Verify EmailJS service is connected properly",
+                "4. Check backend logs for detailed error messages"
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Email debug test failed: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}",
+            "error_type": type(e).__name__
+        }
 
 @api_router.post("/auth/test-email")
 async def test_email_configuration(email: str = "test@example.com"):

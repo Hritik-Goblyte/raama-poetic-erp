@@ -87,7 +87,9 @@ export default function Login() {
     
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
+      console.log('Submitting to:', endpoint, 'with data:', formData);
       const response = await axios.post(`${API}${endpoint}`, formData);
+      console.log('Response:', response.data);
       
       if (isLogin) {
         // Login successful
@@ -97,12 +99,19 @@ export default function Login() {
         navigate('/');
       } else {
         // Registration successful - redirect to OTP verification
+        console.log('Registration successful, redirecting to OTP page with email:', formData.email);
         toast.success('Registration successful! Please check your email for OTP.');
-        navigate('/verify-otp', { 
-          state: { email: formData.email }
-        });
+        
+        // Use setTimeout to ensure the toast is shown before navigation
+        setTimeout(() => {
+          navigate('/verify-otp', { 
+            state: { email: formData.email },
+            replace: true
+          });
+        }, 100);
       }
     } catch (error) {
+      console.error('Submit error:', error);
       const errorMessage = error.response?.data?.detail || 'Something went wrong';
       
       // Check if it's an email verification error
@@ -315,6 +324,14 @@ export default function Login() {
             <p>Demo Accounts:</p>
             <p>Writer: writer@raama.com / password123</p>
             <p>Reader: reader@raama.com / password123</p>
+            
+            {/* Debug button for testing OTP page */}
+            <button
+              onClick={() => navigate('/verify-otp', { state: { email: 'test@example.com' } })}
+              className="mt-4 text-xs text-orange-500 hover:text-orange-400"
+            >
+              [Debug: Test OTP Page]
+            </button>
           </div>
         </div>
       </div>

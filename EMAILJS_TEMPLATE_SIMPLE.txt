@@ -1,0 +1,30 @@
+Subject: Your रामा Verification Code - {{otp_code}}
+
+नमस्ते {{user_name}}! 🙏
+
+Welcome to रामा..! - The Poetic ERP Platform
+
+Your email verification code is:
+
+🔐 {{otp_code}} 🔐
+
+This code will expire in {{expiry_time}}.
+
+HOW TO VERIFY:
+1. Go back to the रामा verification page
+2. Enter the 6-digit code above  
+3. Click "Verify OTP" to complete registration
+4. Start your poetic journey! ✨
+
+SECURITY NOTICE:
+🔒 Never share this code with anyone. Our team will never ask for your verification code.
+
+If you didn't create an account with रामा, please ignore this email.
+
+Need help? Contact us at {{from_email}}
+
+Built with ❤️ for poetry lovers
+Team {{from_name}}
+
+---
+रामा..! - Where Poetry Meets Technology
