@@ -20,6 +20,9 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
   const [checkingBookmark, setCheckingBookmark] = useState(true);
   const [authorUser, setAuthorUser] = useState(null);
   const [showProfilePictureModal, setShowProfilePictureModal] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [showAiAnalysis, setShowAiAnalysis] = useState(false);
+  const [loadingAiAnalysis, setLoadingAiAnalysis] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem('raama-user') || '{}');
   const token = localStorage.getItem('raama-token');
@@ -29,6 +32,7 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
     if (shayari?.id) {
       checkBookmarkStatus();
       fetchAuthorInfo();
+      fetchAiAnalysis();
     }
   }, [shayari?.id]);
   
@@ -60,6 +64,47 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
       }
     } catch (error) {
       console.error('Error fetching author info:', error);
+    }
+  };
+
+  const fetchAiAnalysis = async () => {
+    try {
+      if (shayari?.id) {
+        const response = await axios.get(`${API}/shayaris/${shayari.id}/ai-analysis`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data.ai_processed && response.data.analysis) {
+          setAiAnalysis(response.data.analysis);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching AI analysis:', error);
+    }
+  };
+
+  const handleAnalyzeWithAi = async () => {
+    if (aiAnalysis) {
+      setShowAiAnalysis(!showAiAnalysis);
+      return;
+    }
+
+    setLoadingAiAnalysis(true);
+    try {
+      const response = await axios.post(`${API}/shayaris/${shayari.id}/analyze`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success && response.data.analysis) {
+        setAiAnalysis(response.data.analysis);
+        setShowAiAnalysis(true);
+        toast.success('AI analysis completed! 🤖✨');
+      } else {
+        toast.error(response.data.message || 'AI analysis failed');
+      }
+    } catch (error) {
+      toast.error('Failed to analyze with AI');
+    } finally {
+      setLoadingAiAnalysis(false);
     }
   };
 
@@ -300,6 +345,124 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
                 </div>
               )}
 
+              {/* AI Analysis Section */}
+              {(aiAnalysis || (isCurrentUser && currentUser.role === 'writer')) && (
+                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-blue-500/20">
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <div className="flex items-center gap-2 bg-blue-500/10 p-2 sm:p-3 rounded-lg border border-blue-500/20">
+                      <span className="text-2xl">🤖</span>
+                      <span className="text-blue-400 font-semibold text-sm sm:text-base">AI Analysis</span>
+                    </div>
+                    {isCurrentUser && (
+                      <button
+                        onClick={handleAnalyzeWithAi}
+                        disabled={loadingAiAnalysis}
+                        className="px-3 py-1 text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg border border-blue-500/30 transition-all disabled:opacity-50"
+                      >
+                        {loadingAiAnalysis ? (
+                          <div className="flex items-center gap-1">
+                            <Loader2 size={12} className="animate-spin" />
+                            Analyzing...
+                          </div>
+                        ) : aiAnalysis ? (
+                          showAiAnalysis ? 'Hide' : 'Show'
+                        ) : (
+                          'Analyze'
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  
+                  {showAiAnalysis && aiAnalysis && (
+                    <div className="space-y-4 animate-in fade-in-0 slide-in-from-top-4 duration-500">
+                      {/* Quality Score */}
+                      {aiAnalysis.quality_score && (
+                        <div className="bg-blue-500/5 p-3 sm:p-4 rounded-lg border border-blue-500/20">
+                          <h4 className="text-blue-400 font-semibold mb-2 text-sm sm:text-base">Quality Assessment</h4>
+                          <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Overall:</span>
+                              <span className="text-blue-400 font-medium">{aiAnalysis.quality_score.overall}/10</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Creativity:</span>
+                              <span className="text-blue-400 font-medium">{aiAnalysis.quality_score.creativity}/10</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Language:</span>
+                              <span className="text-blue-400 font-medium">{aiAnalysis.quality_score.language_beauty}/10</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Impact:</span>
+                              <span className="text-blue-400 font-medium">{aiAnalysis.quality_score.emotional_impact}/10</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Sentiment Analysis */}
+                      {aiAnalysis.sentiment_analysis && (
+                        <div className="bg-purple-500/5 p-3 sm:p-4 rounded-lg border border-purple-500/20">
+                          <h4 className="text-purple-400 font-semibold mb-2 text-sm sm:text-base">Sentiment Analysis</h4>
+                          <div className="space-y-1 text-xs sm:text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Emotion:</span>
+                              <span className="text-purple-400">{aiAnalysis.sentiment_analysis.emotion}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Intensity:</span>
+                              <span className="text-purple-400">{aiAnalysis.sentiment_analysis.intensity}/10</span>
+                            </div>
+                            <p className="text-gray-300 mt-2">{aiAnalysis.sentiment_analysis.mood}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Literary Analysis */}
+                      {aiAnalysis.literary_analysis && (
+                        <div className="bg-green-500/5 p-3 sm:p-4 rounded-lg border border-green-500/20">
+                          <h4 className="text-green-400 font-semibold mb-2 text-sm sm:text-base">Literary Analysis</h4>
+                          <div className="space-y-1 text-xs sm:text-sm">
+                            {aiAnalysis.literary_analysis.meter && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Meter:</span>
+                                <span className="text-green-400">{aiAnalysis.literary_analysis.meter}</span>
+                              </div>
+                            )}
+                            {aiAnalysis.literary_analysis.theme && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Theme:</span>
+                                <span className="text-green-400">{aiAnalysis.literary_analysis.theme}</span>
+                              </div>
+                            )}
+                            {aiAnalysis.literary_analysis.literary_devices && aiAnalysis.literary_analysis.literary_devices.length > 0 && (
+                              <div className="mt-2">
+                                <span className="text-gray-400 text-xs">Literary Devices:</span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {aiAnalysis.literary_analysis.literary_devices.map((device, index) => (
+                                    <span key={index} className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">
+                                      {device}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* AI Appreciation */}
+                      {aiAnalysis.appreciation && (
+                        <div className="bg-orange-500/5 p-3 sm:p-4 rounded-lg border border-orange-500/20">
+                          <h4 className="text-orange-400 font-semibold mb-2 text-sm sm:text-base">AI Appreciation</h4>
+                          <p className="text-gray-300 text-xs sm:text-sm leading-relaxed">{aiAnalysis.appreciation}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Mobile Author Section */}
               <div className="lg:hidden mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-orange-500/20">
                 <div className="flex items-center gap-3 mb-3">
@@ -413,6 +576,24 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
                     {isTranslating ? '...' : showTranslation ? 'Original' : 'Translate'}
                   </span>
                 </button>
+
+                {/* AI Analysis Button - Only for author */}
+                {isCurrentUser && currentUser.role === 'writer' && (
+                  <button
+                    onClick={handleAnalyzeWithAi}
+                    disabled={loadingAiAnalysis}
+                    className="flex flex-col items-center gap-1 p-2 rounded-lg text-gray-400 hover:text-blue-400 transition-all disabled:opacity-50"
+                  >
+                    {loadingAiAnalysis ? (
+                      <Loader2 size={20} className="sm:w-6 sm:h-6 animate-spin" />
+                    ) : (
+                      <span className="text-lg">🤖</span>
+                    )}
+                    <span className="text-xs">
+                      {loadingAiAnalysis ? '...' : aiAnalysis ? (showAiAnalysis ? 'Hide AI' : 'Show AI') : 'AI'}
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

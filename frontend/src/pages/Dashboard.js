@@ -94,10 +94,30 @@ export default function Dashboard({ theme, setTheme }) {
   const handleCreateShayari = async (e) => {
     e.preventDefault();
     try {
-      await api.post(`${API}/shayaris`, newShayari, {
+      // Show AI processing toast
+      const processingToast = toast.loading('Creating shayari and processing with AI...', {
+        duration: 10000
+      });
+      
+      const response = await api.post(`${API}/shayaris`, newShayari, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast.success('Shayari created successfully!');
+      
+      // Dismiss processing toast
+      toast.dismiss(processingToast);
+      
+      // Show success message with AI results
+      const aiResult = response.data.ai_result;
+      if (aiResult && aiResult.success) {
+        toast.success('Shayari created successfully with AI analysis! 🤖✨', {
+          description: 'Your shayari has been analyzed and enhanced by AI'
+        });
+      } else {
+        toast.success('Shayari created successfully!', {
+          description: aiResult?.message || 'AI analysis was not available'
+        });
+      }
+      
       setShowNewShayariModal(false);
       setNewShayari({ title: '', content: '' });
       fetchData();

@@ -31,6 +31,13 @@ except ImportError:
     logger.warning("OpenAI package not installed. Translation features will be limited.")
     AsyncOpenAI = None
 
+# Try to import Gemini AI client
+try:
+    import google.generativeai as genai
+except ImportError:
+    logger.warning("Google Generative AI package not installed. AI features will be limited.")
+    genai = None
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -57,6 +64,22 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
 # Gemini AI configuration
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+
+# Initialize Gemini AI
+gemini_model = None
+
+def get_gemini_client():
+    """Initialize Gemini AI client"""
+    global gemini_model
+    if gemini_model is None and GEMINI_API_KEY and genai:
+        try:
+            genai.configure(api_key=GEMINI_API_KEY)
+            gemini_model = genai.GenerativeModel('gemini-2.0-flash-exp')
+            logger.info("Gemini AI client initialized successfully")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Gemini AI client: {str(e)}")
+            gemini_model = False  # Mark as failed to avoid retrying
+    return gemini_model if gemini_model is not False else None
 
 # OpenAI configuration (keeping for backward compatibility)
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
@@ -255,6 +278,97 @@ async def send_email_smtp_fallback(email: str, token: str, name: str, verificati
         logger.error(f"SMTP fallback failed: {str(e)}")
         return False
 
+async def process_shayari_with_gemini(title: str, content: str) -> dict:
+    """Process shayari with Gemini AI to get analysis, suggestions, and enhancements"""
+    try:
+        gemini_client = get_gemini_client()
+        if not gemini_client:
+            logger.warning("Gemini AI not available, skipping AI processing")
+            return {
+                "success": False,
+                "message": "AI processing not available",
+                "analysis": None,
+                "suggestions": None,
+                "enhanced_content": None
+            }
+        
+        # Create a comprehensive prompt for shayari analysis
+        prompt = f"""
+        आप एक हिंदी शायरी के विशेषज्ञ हैं। कृपया निम्नलिखित शायरी का विश्लेषण करें:
+
+        शीर्षक: {title}
+        शायरी: {content}
+
+        कृपया निम्नलिखित प्रारूप में उत्तर दें (JSON format में):
+        {{
+            "sentiment_analysis": {{
+                "emotion": "मुख्य भावना (जैसे: प्रेम, दुःख, खुशी, विरह, आदि)",
+                "intensity": "भावना की तीव्रता (1-10 scale)",
+                "mood": "समग्र मूड का वर्णन"
+            }},
+            "literary_analysis": {{
+                "meter": "छंद का प्रकार",
+                "rhyme_scheme": "तुकबंदी का पैटर्न",
+                "literary_devices": ["उपयोग किए गए अलंकार"],
+                "theme": "मुख्य विषय"
+            }},
+            "quality_score": {{
+                "overall": "समग्र गुणवत्ता (1-10)",
+                "creativity": "रचनात्मकता (1-10)",
+                "language_beauty": "भाषा की सुंदरता (1-10)",
+                "emotional_impact": "भावनात्मक प्रभाव (1-10)"
+            }},
+            "suggestions": {{
+                "improvements": ["सुधार के सुझाव"],
+                "alternative_words": ["बेहतर शब्द विकल्प"],
+                "structure_tips": ["संरचना संबंधी सुझाव"]
+            }},
+            "tags": ["उपयुक्त टैग्स"],
+            "appreciation": "शायरी की सराहना और प्रशंसा"
+        }}
+        
+        कृपया केवल JSON response दें, कोई अतिरिक्त text नहीं।
+        """
+        
+        logger.info("Sending shayari to Gemini AI for analysis...")
+        response = gemini_client.generate_content(prompt)
+        
+        if response and response.text:
+            try:
+                # Parse the JSON response
+                ai_analysis = json.loads(response.text.strip())
+                logger.info("Gemini AI analysis completed successfully")
+                
+                return {
+                    "success": True,
+                    "message": "AI analysis completed",
+                    "analysis": ai_analysis,
+                    "raw_response": response.text
+                }
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse Gemini AI response as JSON: {str(e)}")
+                return {
+                    "success": False,
+                    "message": "AI response parsing failed",
+                    "analysis": None,
+                    "raw_response": response.text
+                }
+        else:
+            logger.error("Empty response from Gemini AI")
+            return {
+                "success": False,
+                "message": "Empty AI response",
+                "analysis": None
+            }
+            
+    except Exception as e:
+        logger.error(f"Gemini AI processing failed: {str(e)}")
+        return {
+            "success": False,
+            "message": f"AI processing error: {str(e)}",
+            "analysis": None
+        }
+
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -305,6 +419,11 @@ class Shayari(BaseModel):
     isFeatured: bool = False
     featuredAt: Optional[datetime] = None
     collectionIds: List[str] = []  # Collections this shayari belongs to
+    # AI Analysis fields
+    aiAnalysis: Optional[dict] = None  # Gemini AI analysis results
+    aiProcessed: bool = False  # Whether AI processing was completed
+    aiProcessedAt: Optional[datetime] = None  # When AI processing was done
+    qualityScore: Optional[float] = None  # Overall quality score from AI
     createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Collection(BaseModel):
@@ -845,17 +964,53 @@ async def create_shayari(shayari_data: ShayariCreate, current_user: User = Depen
     if current_user.role != "writer":
         raise HTTPException(status_code=403, detail="Only writers can create shayaris")
     
+    # Process shayari with Gemini AI
+    logger.info(f"Processing shayari with Gemini AI: {shayari_data.title}")
+    ai_result = await process_shayari_with_gemini(shayari_data.title, shayari_data.content)
+    
+    # Extract AI-suggested tags and quality score
+    ai_tags = []
+    quality_score = None
+    ai_analysis = None
+    ai_processed = False
+    ai_processed_at = None
+    
+    if ai_result["success"] and ai_result["analysis"]:
+        ai_analysis = ai_result["analysis"]
+        ai_processed = True
+        ai_processed_at = datetime.now(timezone.utc)
+        
+        # Extract tags from AI analysis
+        if "tags" in ai_analysis:
+            ai_tags = ai_analysis["tags"]
+        
+        # Extract quality score
+        if "quality_score" in ai_analysis and "overall" in ai_analysis["quality_score"]:
+            try:
+                quality_score = float(ai_analysis["quality_score"]["overall"])
+            except (ValueError, TypeError):
+                quality_score = None
+    
+    # Combine user tags with AI-suggested tags
+    combined_tags = list(set(shayari_data.tags + ai_tags))
+    
     shayari = Shayari(
         authorId=current_user.id,
         authorName=f"{current_user.firstName} {current_user.lastName}",
         authorUsername=current_user.username,
         title=shayari_data.title,
         content=shayari_data.content,
-        tags=shayari_data.tags
+        tags=combined_tags,
+        aiAnalysis=ai_analysis,
+        aiProcessed=ai_processed,
+        aiProcessedAt=ai_processed_at,
+        qualityScore=quality_score
     )
     
     doc = shayari.model_dump()
     doc['createdAt'] = doc['createdAt'].isoformat()
+    if doc.get('aiProcessedAt'):
+        doc['aiProcessedAt'] = doc['aiProcessedAt'].isoformat()
     await db.shayaris.insert_one(doc)
     
     # Log activity
@@ -864,7 +1019,12 @@ async def create_shayari(shayari_data: ShayariCreate, current_user: User = Depen
         action="create",
         targetType="shayari",
         targetId=shayari.id,
-        metadata={"title": shayari.title}
+        metadata={
+            "title": shayari.title,
+            "ai_processed": ai_processed,
+            "quality_score": quality_score,
+            "ai_tags_added": len(ai_tags)
+        }
     )
     activity_doc = activity.model_dump()
     activity_doc['createdAt'] = activity_doc['createdAt'].isoformat()
@@ -885,7 +1045,15 @@ async def create_shayari(shayari_data: ShayariCreate, current_user: User = Depen
     except Exception as e:
         logger.error(f"Error creating follow notifications: {str(e)}")
     
-    return shayari
+    # Return shayari with AI analysis results
+    return {
+        "shayari": shayari,
+        "ai_result": {
+            "success": ai_result["success"],
+            "message": ai_result["message"],
+            "analysis_available": ai_processed
+        }
+    }
 
 @api_router.get("/shayaris", response_model=List[Shayari])
 async def get_all_shayaris(current_user: User = Depends(get_current_user)):
@@ -995,6 +1163,77 @@ async def get_shayaris_by_author(author_id: str, current_user: User = Depends(ge
         if isinstance(s['createdAt'], str):
             s['createdAt'] = datetime.fromisoformat(s['createdAt'])
     return shayaris
+
+@api_router.post("/shayaris/{shayari_id}/analyze")
+async def analyze_shayari_with_ai(shayari_id: str, current_user: User = Depends(get_current_user)):
+    """Get AI analysis for a specific shayari"""
+    shayari = await db.shayaris.find_one({"id": shayari_id}, {"_id": 0})
+    if not shayari:
+        raise HTTPException(status_code=404, detail="Shayari not found")
+    
+    # Check if user has permission (author or admin)
+    if shayari['authorId'] != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to analyze this shayari")
+    
+    # Process with Gemini AI
+    ai_result = await process_shayari_with_gemini(shayari['title'], shayari['content'])
+    
+    if ai_result["success"]:
+        # Update shayari with AI analysis
+        update_data = {
+            "aiAnalysis": ai_result["analysis"],
+            "aiProcessed": True,
+            "aiProcessedAt": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # Extract quality score if available
+        if ai_result["analysis"] and "quality_score" in ai_result["analysis"]:
+            try:
+                quality_score = float(ai_result["analysis"]["quality_score"]["overall"])
+                update_data["qualityScore"] = quality_score
+            except (ValueError, TypeError, KeyError):
+                pass
+        
+        await db.shayaris.update_one({"id": shayari_id}, {"$set": update_data})
+    
+    return {
+        "success": ai_result["success"],
+        "message": ai_result["message"],
+        "analysis": ai_result["analysis"] if ai_result["success"] else None
+    }
+
+@api_router.get("/shayaris/{shayari_id}/ai-analysis")
+async def get_shayari_ai_analysis(shayari_id: str, current_user: User = Depends(get_current_user)):
+    """Get existing AI analysis for a shayari"""
+    shayari = await db.shayaris.find_one({"id": shayari_id}, {"_id": 0})
+    if not shayari:
+        raise HTTPException(status_code=404, detail="Shayari not found")
+    
+    return {
+        "shayari_id": shayari_id,
+        "ai_processed": shayari.get("aiProcessed", False),
+        "ai_processed_at": shayari.get("aiProcessedAt"),
+        "quality_score": shayari.get("qualityScore"),
+        "analysis": shayari.get("aiAnalysis")
+    }
+
+@api_router.post("/test-gemini")
+async def test_gemini_ai():
+    """Test Gemini AI integration"""
+    try:
+        test_result = await process_shayari_with_gemini(
+            "प्रेम की पहली बारिश",
+            "दिल में बसी है तेरी यादें\nआंखों में तेरे सपने हैं\nहर सांस में तेरा नाम है\nतू ही मेरी मंजिल है"
+        )
+        return {
+            "gemini_available": bool(get_gemini_client()),
+            "test_result": test_result
+        }
+    except Exception as e:
+        return {
+            "gemini_available": False,
+            "error": str(e)
+        }
 
 @api_router.post("/writer-requests")
 async def create_writer_request(current_user: User = Depends(get_current_user)):
