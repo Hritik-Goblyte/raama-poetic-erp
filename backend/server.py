@@ -420,19 +420,16 @@ async def translate_shayari_with_gemini(content: str, target_language: str = "en
         # Create translation prompt based on target language
         if target_language.lower() == "english":
             prompt = f"""
-            You are an expert Hinglish to Hindi translator specializing in poetry and shayari. Please translate it whithout changing anything no chnages no modification just simple translate and return only shayari.
-
+            i give you shayari in hinglish i want you to translate hinglish shayari to hindi and repond just shayari not any modification nothing just shayari from hinglish to hindi 
             Hindi Shayari:
             {content}
 
             Instructions:
             1. Maintain the poetic flow and rhythm as much as possible
             2. Preserve the emotional depth and meaning
-            3. Use beautiful, poetic English language
             4. Keep the essence and soul of the original shayari
-            5. Make it sound natural in English while staying true to the original
 
-            Please provide only the English translation, no additional text or explanations.
+            Please provide only the translation, no additional text or explanations.
             """
         elif target_language.lower() == "hindi":
             prompt = f"""
