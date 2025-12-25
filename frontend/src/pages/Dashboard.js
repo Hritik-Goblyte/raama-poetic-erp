@@ -107,14 +107,14 @@ export default function Dashboard({ theme, setTheme }) {
       toast.dismiss(processingToast);
       
       // Show success message with AI results
-      const aiResult = response.data.ai_result;
-      if (aiResult && aiResult.success) {
+      const shayari = response.data;
+      if (shayari.aiProcessed) {
         toast.success('Shayari created successfully with AI analysis! 🤖✨', {
           description: 'Your shayari has been analyzed and enhanced by AI'
         });
       } else {
         toast.success('Shayari created successfully!', {
-          description: aiResult?.message || 'AI analysis was not available'
+          description: 'AI analysis was not available'
         });
       }
       
