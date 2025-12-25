@@ -20,12 +20,7 @@ export default function OTPVerification() {
   const email = location.state?.email || '';
 
   useEffect(() => {
-    console.log('OTPVerification mounted');
-    console.log('Location state:', location.state);
-    console.log('Email from state:', email);
-    
     if (!email) {
-      console.log('No email found, redirecting to login');
       navigate('/login');
       return;
     }
