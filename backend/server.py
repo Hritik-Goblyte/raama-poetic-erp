@@ -340,6 +340,87 @@ async def process_shayari_with_gemini(title: str, content: str) -> dict:
             "analysis": None
         }
 
+async def translate_shayari_with_gemini(content: str, target_language: str = "english") -> dict:
+    """Translate shayari using Gemini AI"""
+    try:
+        logger.info(f"Starting Gemini AI translation to {target_language}...")
+        gemini_client = get_gemini_client()
+        if not gemini_client:
+            logger.warning("Gemini AI client not available for translation")
+            return {
+                "success": False,
+                "message": "AI translation not available - client not initialized",
+                "translated_content": None
+            }
+        
+        # Create translation prompt based on target language
+        if target_language.lower() == "english":
+            prompt = f"""
+            You are an expert Hinglish to Hindi translator specializing in poetry and shayari. Please translate it whithout changing anything no chnages no modification just simple translate and return only shayari.
+
+            Hindi Shayari:
+            {content}
+
+            Instructions:
+            1. Maintain the poetic flow and rhythm as much as possible
+            2. Preserve the emotional depth and meaning
+            3. Use beautiful, poetic English language
+            4. Keep the essence and soul of the original shayari
+            5. Make it sound natural in English while staying true to the original
+
+            Please provide only the English translation, no additional text or explanations.
+            """
+        elif target_language.lower() == "hindi":
+            prompt = f"""
+            आप एक विशेषज्ञ अनुवादक हैं जो अंग्रेजी कविता को हिंदी शायरी में बदलने में माहिर हैं। कृपया निम्नलिखित अंग्रेजी कविता को हिंदी शायरी में अनुवाद करें।
+
+            English Poetry:
+            {content}
+
+            निर्देश:
+            1. शायरी की भावना और अर्थ को बनाए रखें
+            2. हिंदी की काव्यात्मक भाषा का उपयोग करें
+            3. तुकबंदी और छंद का ध्यान रखें
+            4. मूल भावना को बनाए रखते हुए सुंदर हिंदी में अनुवाद करें
+
+            कृपया केवल हिंदी अनुवाद दें, कोई अतिरिक्त text नहीं।
+            """
+        else:
+            return {
+                "success": False,
+                "message": f"Unsupported target language: {target_language}",
+                "translated_content": None
+            }
+        
+        logger.info("Sending translation request to Gemini AI...")
+        response = gemini_client.generate_content(prompt)
+        
+        if response and response.text:
+            translated_text = response.text.strip()
+            logger.info("Gemini AI translation completed successfully")
+            
+            return {
+                "success": True,
+                "message": "Translation completed successfully",
+                "translated_content": translated_text,
+                "target_language": target_language
+            }
+        else:
+            logger.error("Empty response from Gemini AI for translation")
+            return {
+                "success": False,
+                "message": "Empty translation response",
+                "translated_content": None
+            }
+            
+    except Exception as e:
+        logger.error(f"Gemini AI translation failed: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Translation error: {str(e)}",
+            "translated_content": None
+        }
+
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -1193,6 +1274,41 @@ async def get_shayari_ai_analysis(shayari_id: str, current_user: User = Depends(
         "analysis": shayari.get("aiAnalysis")
     }
 
+@api_router.post("/shayaris/{shayari_id}/translate")
+async def translate_shayari(shayari_id: str, target_language: str = "english", current_user: User = Depends(get_current_user)):
+    """Translate a shayari using Gemini AI"""
+    shayari = await db.shayaris.find_one({"id": shayari_id}, {"_id": 0})
+    if not shayari:
+        raise HTTPException(status_code=404, detail="Shayari not found")
+    
+    # Translate the shayari content
+    translation_result = await translate_shayari_with_gemini(shayari['content'], target_language)
+    
+    return {
+        "shayari_id": shayari_id,
+        "original_content": shayari['content'],
+        "target_language": target_language,
+        "success": translation_result["success"],
+        "message": translation_result["message"],
+        "translated_content": translation_result.get("translated_content")
+    }
+
+@api_router.post("/translate")
+async def translate_text(content: str, target_language: str = "english", current_user: User = Depends(get_current_user)):
+    """Translate any text using Gemini AI"""
+    if not content.strip():
+        raise HTTPException(status_code=400, detail="Content cannot be empty")
+    
+    translation_result = await translate_shayari_with_gemini(content, target_language)
+    
+    return {
+        "original_content": content,
+        "target_language": target_language,
+        "success": translation_result["success"],
+        "message": translation_result["message"],
+        "translated_content": translation_result.get("translated_content")
+    }
+
 @api_router.get("/health")
 async def health_check():
     """Health check endpoint"""
@@ -1204,7 +1320,7 @@ async def health_check():
 
 @api_router.post("/test-gemini")
 async def test_gemini_ai():
-    """Test Gemini AI integration"""
+    """Test Gemini AI integration for both analysis and translation"""
     try:
         # Check if genai is imported
         if genai is None:
@@ -1235,10 +1351,16 @@ async def test_gemini_ai():
                 "client_initialized": False
             }
         
-        # Try a simple test
-        test_result = await process_shayari_with_gemini(
+        # Test analysis
+        analysis_result = await process_shayari_with_gemini(
             "प्रेम की पहली बारिश",
             "दिल में बसी है तेरी यादें\nआंखों में तेरे सपने हैं"
+        )
+        
+        # Test translation
+        translation_result = await translate_shayari_with_gemini(
+            "दिल में बसी है तेरी यादें\nआंखों में तेरे सपने हैं",
+            "english"
         )
         
         return {
@@ -1246,7 +1368,15 @@ async def test_gemini_ai():
             "genai_imported": True,
             "api_key_set": True,
             "client_initialized": True,
-            "test_result": test_result
+            "analysis_test": {
+                "success": analysis_result["success"],
+                "message": analysis_result["message"]
+            },
+            "translation_test": {
+                "success": translation_result["success"],
+                "message": translation_result["message"],
+                "translated_content": translation_result.get("translated_content", "")[:100] + "..." if translation_result.get("translated_content") else None
+            }
         }
     except Exception as e:
         return {

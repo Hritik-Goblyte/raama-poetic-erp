@@ -247,20 +247,21 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
       return;
     }
 
-    // Translate for the first time
+    // Translate for the first time using Gemini AI
     setIsTranslating(true);
     try {
-      const response = await axios.post(`${API}/translate`, {
-        text: shayari.content,
-        fromLang: 'hinglish',
-        toLang: 'hindi'
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.post(`${API}/shayaris/${shayari.id}/translate`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { target_language: 'english' }
       });
       
-      setTranslatedContent(response.data.translatedText);
-      setShowTranslation(true);
-      toast.success('Translation completed!');
+      if (response.data.success && response.data.translated_content) {
+        setTranslatedContent(response.data.translated_content);
+        setShowTranslation(true);
+        toast.success('Translation completed with AI! 🤖✨');
+      } else {
+        toast.error(response.data.message || 'Translation failed');
+      }
     } catch (error) {
       console.error('Translation error:', error);
       toast.error('Failed to translate shayari');
@@ -330,7 +331,8 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
                 <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-purple-500/20 animate-in fade-in-0 slide-in-from-top-4 duration-500">
                   <div className="flex items-center gap-2 mb-3 sm:mb-4 bg-purple-500/10 p-2 sm:p-3 rounded-lg border border-purple-500/20">
                     <Languages size={16} className="sm:w-5 sm:h-5 text-purple-400" />
-                    <span className="text-purple-400 font-semibold text-sm sm:text-base">हिंदी अनुवाद (Hindi Translation)</span>
+                    <span className="text-purple-400 font-semibold text-sm sm:text-base">English Translation</span>
+                    <span className="text-xs bg-purple-500/20 px-2 py-1 rounded text-purple-300">🤖 AI Powered</span>
                   </div>
                   <div 
                     className="text-gray-200 text-base sm:text-lg lg:text-xl leading-relaxed whitespace-pre-line bg-purple-500/5 p-3 sm:p-4 rounded-lg"
