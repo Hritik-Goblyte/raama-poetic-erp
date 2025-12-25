@@ -31,14 +31,28 @@ except ImportError:
     logger.warning("OpenAI package not installed. Translation features will be limited.")
     AsyncOpenAI = None
 
-# Try to import Gemini AI client
+# Try to import Gemini AI client with multiple fallback attempts
 try:
     import google.generativeai as genai
     logger.info("Google Generative AI package imported successfully")
 except ImportError as e:
-    logger.error(f"Google Generative AI package not installed: {str(e)}")
-    logger.error("Please install with: pip install google-generativeai")
-    genai = None
+    try:
+        # Try alternative import path
+        from google import generativeai as genai
+        logger.info("Google Generative AI package imported via alternative path")
+    except ImportError:
+        try:
+            # Try installing and importing
+            import subprocess
+            import sys
+            logger.info("Attempting to install google-generativeai package...")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "google-generativeai>=0.8.0"])
+            import google.generativeai as genai
+            logger.info("Google Generative AI package installed and imported successfully")
+        except Exception as install_error:
+            logger.error(f"Failed to install/import Google Generative AI: {str(install_error)}")
+            logger.error("AI features will be limited. Please ensure google-generativeai is in requirements.txt")
+            genai = None
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -323,12 +337,26 @@ async def process_shayari_with_gemini(title: str, content: str) -> dict:
         gemini_client = get_gemini_client()
         if not gemini_client:
             logger.warning("Gemini AI client not available")
+            # Provide a basic fallback analysis
             return {
                 "success": False,
                 "message": "AI processing not available - client not initialized",
                 "analysis": None,
-                "suggestions": None,
-                "enhanced_content": None
+                "fallback_analysis": {
+                    "sentiment_analysis": {
+                        "emotion": "भावनात्मक",
+                        "intensity": "5",
+                        "mood": "शायरी में गहरी भावनाएं हैं"
+                    },
+                    "quality_score": {
+                        "overall": "7",
+                        "creativity": "7", 
+                        "language_beauty": "7",
+                        "emotional_impact": "7"
+                    },
+                    "tags": ["शायरी", "कविता", "भावना"],
+                    "appreciation": "यह एक सुंदर शायरी है जिसमें गहरी भावनाएं हैं।"
+                }
             }
         
         # Create a comprehensive prompt for shayari analysis
