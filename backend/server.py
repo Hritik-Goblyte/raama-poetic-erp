@@ -34,8 +34,10 @@ except ImportError:
 # Try to import Gemini AI client
 try:
     import google.generativeai as genai
-except ImportError:
-    logger.warning("Google Generative AI package not installed. AI features will be limited.")
+    logger.info("Google Generative AI package imported successfully")
+except ImportError as e:
+    logger.error(f"Google Generative AI package not installed: {str(e)}")
+    logger.error("Please install with: pip install google-generativeai")
     genai = None
 
 ROOT_DIR = Path(__file__).parent
@@ -47,6 +49,23 @@ db = client[os.environ['DB_NAME']]
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup"""
+    logger.info("Starting up Raama backend...")
+    logger.info(f"Gemini API Key configured: {bool(GEMINI_API_KEY)}")
+    logger.info(f"Gemini package available: {genai is not None}")
+    
+    # Try to initialize Gemini client
+    if genai and GEMINI_API_KEY:
+        client = get_gemini_client()
+        if client:
+            logger.info("✅ Gemini AI initialized successfully on startup")
+        else:
+            logger.error("❌ Failed to initialize Gemini AI on startup")
+    else:
+        logger.warning("⚠️ Gemini AI not available - missing package or API key")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
@@ -73,12 +92,28 @@ def get_gemini_client():
     global gemini_model
     if gemini_model is None and GEMINI_API_KEY and genai:
         try:
+            logger.info(f"Initializing Gemini AI with API key: {GEMINI_API_KEY[:10]}...")
             genai.configure(api_key=GEMINI_API_KEY)
-            gemini_model = genai.GenerativeModel('gemini-2.0-flash-exp')
-            logger.info("Gemini AI client initialized successfully")
+            # Try different model names in order of preference (latest first)
+            model_names = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
+            
+            for model_name in model_names:
+                try:
+                    gemini_model = genai.GenerativeModel(model_name)
+                    logger.info(f"Gemini AI client initialized successfully with model: {model_name}")
+                    break
+                except Exception as model_error:
+                    logger.warning(f"Failed to initialize model {model_name}: {str(model_error)}")
+                    continue
+            
+            if gemini_model is None:
+                logger.error("Failed to initialize any Gemini model")
+                gemini_model = False
+                
         except Exception as e:
-            logger.warning(f"Failed to initialize Gemini AI client: {str(e)}")
+            logger.error(f"Failed to initialize Gemini AI client: {str(e)}")
             gemini_model = False  # Mark as failed to avoid retrying
+    
     return gemini_model if gemini_model is not False else None
 
 # OpenAI configuration (keeping for backward compatibility)
@@ -349,8 +384,9 @@ async def translate_shayari_with_gemini(content: str, target_language: str = "en
             logger.warning("Gemini AI client not available for translation")
             return {
                 "success": False,
-                "message": "AI translation not available - client not initialized",
-                "translated_content": None
+                "message": "AI translation not available - Gemini AI client not initialized. Please check server configuration.",
+                "translated_content": None,
+                "fallback_message": "Translation service is currently unavailable. Please try again later."
             }
         
         # Create translation prompt based on target language
@@ -1315,8 +1351,32 @@ async def health_check():
     return {
         "status": "healthy",
         "gemini_available": genai is not None and bool(GEMINI_API_KEY),
+        "gemini_package_imported": genai is not None,
+        "gemini_api_key_set": bool(GEMINI_API_KEY),
+        "gemini_client_initialized": get_gemini_client() is not None,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
+
+@api_router.get("/debug/gemini")
+async def debug_gemini():
+    """Debug Gemini AI configuration"""
+    try:
+        client = get_gemini_client()
+        return {
+            "genai_imported": genai is not None,
+            "api_key_set": bool(GEMINI_API_KEY),
+            "api_key_preview": GEMINI_API_KEY[:10] + "..." if GEMINI_API_KEY else None,
+            "client_initialized": client is not None,
+            "client_type": str(type(client)) if client else None,
+            "error": None
+        }
+    except Exception as e:
+        return {
+            "genai_imported": genai is not None,
+            "api_key_set": bool(GEMINI_API_KEY),
+            "client_initialized": False,
+            "error": str(e)
+        }
 
 @api_router.post("/test-gemini")
 async def test_gemini_ai():

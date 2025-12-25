@@ -260,11 +260,15 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
         setShowTranslation(true);
         toast.success('Translation completed with AI! 🤖✨');
       } else {
-        toast.error(response.data.message || 'Translation failed');
+        toast.error(response.data.message || 'Translation failed', {
+          description: response.data.fallback_message || 'AI translation service is currently unavailable'
+        });
       }
     } catch (error) {
       console.error('Translation error:', error);
-      toast.error('Failed to translate shayari');
+      toast.error('Failed to translate shayari', {
+        description: 'Please try again later or contact support'
+      });
     } finally {
       setIsTranslating(false);
     }
