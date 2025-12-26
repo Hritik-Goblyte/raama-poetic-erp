@@ -285,7 +285,7 @@ export default function Dashboard({ theme, setTheme }) {
                       <div className="flex items-start justify-between mb-3">
                         <h3 className="text-xl font-bold text-orange-500 flex-1">{shayari.title}</h3>
                       </div>
-                      <p className="text-gray-300 mb-4 line-clamp-3" style={{ fontFamily: 'Style Script, cursive', fontSize: '1.1rem' }}>
+                      <p className="text-gray-300 mb-4 line-clamp-2" style={{ fontFamily: 'Style Script, cursive', fontSize: '1.1rem' }}>
                         {shayari.content}
                       </p>
                       <div className="flex items-center justify-between text-sm text-gray-400">
@@ -331,7 +331,7 @@ export default function Dashboard({ theme, setTheme }) {
                         <div className="flex items-start justify-between mb-3">
                           <h3 className="text-lg font-bold text-orange-500 flex-1 line-clamp-2">{shayari.title}</h3>
                         </div>
-                        <p className="text-gray-300 mb-4 line-clamp-4" style={{ fontFamily: 'Style Script, cursive', fontSize: '1rem' }}>
+                        <p className="text-gray-300 mb-4 line-clamp-2" style={{ fontFamily: 'Style Script, cursive', fontSize: '1rem' }}>
                           {shayari.content}
                         </p>
                         <div className="flex items-center justify-between text-xs text-gray-400">
@@ -381,7 +381,7 @@ export default function Dashboard({ theme, setTheme }) {
                         </div>
                       )}
                     </div>
-                    <p className="text-gray-300 mb-4 line-clamp-3" style={{ fontFamily: 'Style Script, cursive', fontSize: '1.1rem' }}>
+                    <p className="text-gray-300 mb-4 line-clamp-2" style={{ fontFamily: 'Style Script, cursive', fontSize: '1.1rem' }}>
                       {shayari.content}
                     </p>
                     <div className="flex items-center justify-between text-sm text-gray-400">
