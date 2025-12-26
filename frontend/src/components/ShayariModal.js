@@ -35,6 +35,40 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
       fetchAiAnalysis();
     }
   }, [shayari?.id]);
+
+  // Reset translation state when shayari changes
+  useEffect(() => {
+    if (shayari?.id) {
+      // Reset all translation-related states when switching to a new shayari
+      setTranslatedContent('');
+      setShowTranslation(false);
+      setIsTranslating(false);
+      setShowShareOptions(false);
+      setShowProfilePictureModal(false);
+      setAiAnalysis(null);
+      setShowAiAnalysis(false);
+      setLoadingAiAnalysis(false);
+      setAuthorUser(null);
+    }
+  }, [shayari?.id]);
+
+  // Reset all states when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      // Clean up all states when modal is closed
+      setTranslatedContent('');
+      setShowTranslation(false);
+      setIsTranslating(false);
+      setShowShareOptions(false);
+      setShowProfilePictureModal(false);
+      setAiAnalysis(null);
+      setShowAiAnalysis(false);
+      setLoadingAiAnalysis(false);
+      setAuthorUser(null);
+      setIsBookmarked(false);
+      setCheckingBookmark(true);
+    }
+  }, [isOpen]);
   
   if (!shayari) return null;
 
