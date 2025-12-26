@@ -53,6 +53,28 @@ body {
   font-family: 'Tillana', cursive !important;
 }
 
+/* Infinite Scroll Animation for Shayari Carousel */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll-infinite {
+  animation: scroll 30s linear infinite;
+}
+
+.animate-scroll-infinite:hover {
+  animation-play-state: paused;
+}
+*:contains("सफल"),
+*:contains("असफल") {
+  font-family: 'Tillana', cursive !important;
+}
+
 .App {
   min-height: 100vh;
   background: var(--app-bg);
