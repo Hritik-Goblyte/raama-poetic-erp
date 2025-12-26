@@ -72,9 +72,6 @@ const RaamaLoader = ({ isVisible }) => {
           <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
           <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
         </div>
-        <p className="text-gray-400 mt-4 text-lg" style={{ fontFamily: 'Tillana, cursive' }}>
-          सत्यापन हो रहा है...
-        </p>
       </div>
     </div>
   );

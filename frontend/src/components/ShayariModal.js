@@ -295,7 +295,7 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
             <div className="sticky top-0 bg-gradient-to-b from-gray-900 to-gray-900/90 backdrop-blur-sm border-b border-orange-500/20 p-3 sm:p-4 lg:p-6 pb-3 sm:pb-4">
               <h2 
                 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-orange-500 pr-8 sm:pr-12 leading-tight"
-                style={{ fontFamily: 'Macondo, cursive' }}
+                style={{ fontFamily: 'Tillana, cursive' }}
               >
                 {shayari.title}
               </h2>
@@ -322,7 +322,7 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
               <div 
                 className={`text-gray-200 text-base sm:text-lg lg:text-xl leading-relaxed whitespace-pre-line transition-opacity duration-300 ${showTranslation ? 'opacity-50' : 'opacity-100'}`}
                 style={{ 
-                  fontFamily: 'Style Script, cursive', 
+                  fontFamily: 'Tillana, cursive', 
                   fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)',
                   lineHeight: '1.8'
                 }}
