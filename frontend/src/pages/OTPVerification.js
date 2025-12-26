@@ -8,6 +8,78 @@ import { setUserInStorage, setTokenInStorage } from '@/utils/storage';
 const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
+// Animated Loader Component
+const RaamaLoader = ({ isVisible }) => {
+  const [currentText, setCurrentText] = useState('');
+  const [isErasing, setIsErasing] = useState(false);
+  const fullText = 'रामा';
+  
+  useEffect(() => {
+    if (!isVisible) return;
+    
+    let timeout;
+    
+    if (!isErasing) {
+      // Writing animation
+      if (currentText.length < fullText.length) {
+        timeout = setTimeout(() => {
+          setCurrentText(fullText.slice(0, currentText.length + 1));
+        }, 200);
+      } else {
+        // Start erasing after a pause
+        timeout = setTimeout(() => {
+          setIsErasing(true);
+        }, 1000);
+      }
+    } else {
+      // Erasing animation
+      if (currentText.length > 0) {
+        timeout = setTimeout(() => {
+          setCurrentText(currentText.slice(0, -1));
+        }, 100);
+      } else {
+        // Start writing again after a pause
+        timeout = setTimeout(() => {
+          setIsErasing(false);
+        }, 500);
+      }
+    }
+    
+    return () => clearTimeout(timeout);
+  }, [currentText, isErasing, isVisible, fullText]);
+  
+  if (!isVisible) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="text-center">
+        <div className="relative">
+          <h1 
+            className="text-6xl md:text-8xl font-bold mb-4"
+            style={{ 
+              fontFamily: 'Tillana, cursive',
+              color: '#ff6b35',
+              textShadow: '0 0 40px rgba(255, 107, 53, 0.8)',
+              minHeight: '1.2em'
+            }}
+          >
+            {currentText}
+            <span className="animate-pulse">|</span>
+          </h1>
+        </div>
+        <div className="flex justify-center space-x-2 mt-6">
+          <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        </div>
+        <p className="text-gray-400 mt-4 text-lg" style={{ fontFamily: 'Tillana, cursive' }}>
+          सत्यापन हो रहा है...
+        </p>
+      </div>
+    </div>
+  );
+};
+
 export default function OTPVerification() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,7 +166,12 @@ export default function OTPVerification() {
       setTokenInStorage(response.data.token);
       setUserInStorage(response.data.user);
       toast.success('Email verified successfully! Welcome to रामा!');
-      navigate('/');
+      
+      // Show loader for a moment before navigation
+      setTimeout(() => {
+        navigate('/');
+        setLoading(false);
+      }, 1500);
     } catch (error) {
       const errorMessage = error.response?.data?.detail || 'OTP verification failed';
       toast.error(errorMessage);
@@ -102,7 +179,6 @@ export default function OTPVerification() {
       // Clear OTP on error
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
-    } finally {
       setLoading(false);
     }
   };
@@ -123,22 +199,25 @@ export default function OTPVerification() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8" style={{
-      background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)'
-    }}>
-      <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg">
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2" style={{ 
-            fontFamily: 'Tillana, cursive',
-            color: '#ff6b35',
-            textShadow: '0 0 30px rgba(255, 107, 53, 0.5)'
-          }}>
-            रामा..!
-          </h1>
-          <p className="text-sm sm:text-base lg:text-lg text-gray-400" style={{ fontFamily: 'Macondo, cursive' }}>
-            Email Verification
-          </p>
-        </div>
+    <>
+      <RaamaLoader isVisible={loading} />
+      
+      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8" style={{
+        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)'
+      }}>
+        <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2" style={{ 
+              fontFamily: 'Tillana, cursive',
+              color: '#ff6b35',
+              textShadow: '0 0 30px rgba(255, 107, 53, 0.5)'
+            }}>
+              रामा..!
+            </h1>
+            <p className="text-sm sm:text-base lg:text-lg text-gray-400" style={{ fontFamily: 'Macondo, cursive' }}>
+              Email Verification
+            </p>
+          </div>
 
         <div className="glass-card p-4 sm:p-6 lg:p-8">
           <div className="text-center mb-4 sm:mb-6">
@@ -235,7 +314,8 @@ export default function OTPVerification() {
             </p>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

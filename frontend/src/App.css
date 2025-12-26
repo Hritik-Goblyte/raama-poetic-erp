@@ -11,6 +11,48 @@ body {
   overflow-x: hidden;
 }
 
+/* Hindi Text Styling */
+.hindi-text {
+  font-family: 'Tillana', cursive;
+  font-weight: 500;
+}
+
+.hindi-title {
+  font-family: 'Tillana', cursive;
+  font-weight: 700;
+}
+
+.hindi-subtitle {
+  font-family: 'Tillana', cursive;
+  font-weight: 600;
+}
+
+/* Apply Tillana to all Hindi content */
+[lang="hi"], 
+.devanagari,
+*:lang(hi) {
+  font-family: 'Tillana', cursive !important;
+}
+
+/* Specific selectors for common Hindi text patterns */
+*:contains("रामा"),
+*:contains("शायरी"),
+*:contains("कविता"),
+*:contains("हिंदी"),
+*:contains("प्रेम"),
+*:contains("दुःख"),
+*:contains("खुशी"),
+*:contains("विरह"),
+*:contains("भावना"),
+*:contains("स्वागत"),
+*:contains("धन्यवाद"),
+*:contains("नमस्ते"),
+*:contains("प्रतीक्षा"),
+*:contains("सफल"),
+*:contains("असफल") {
+  font-family: 'Tillana', cursive !important;
+}
+
 .App {
   min-height: 100vh;
   background: var(--app-bg);

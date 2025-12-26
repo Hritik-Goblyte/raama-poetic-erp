@@ -335,7 +335,7 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
                 <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-purple-500/20 animate-in fade-in-0 slide-in-from-top-4 duration-500">
                   <div className="flex items-center gap-2 mb-3 sm:mb-4 bg-purple-500/10 p-2 sm:p-3 rounded-lg border border-purple-500/20">
                     <Languages size={16} className="sm:w-5 sm:h-5 text-purple-400" />
-                    <span className="text-purple-400 font-semibold text-sm sm:text-base">English Translation</span>
+                    <span className="text-purple-400 font-semibold text-sm sm:text-base">Translation</span>
                     <span className="text-xs bg-purple-500/20 px-2 py-1 rounded text-purple-300">🤖 AI Powered</span>
                   </div>
                   <div 

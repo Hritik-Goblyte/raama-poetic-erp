@@ -8,11 +8,84 @@ import { setUserInStorage, setTokenInStorage } from '@/utils/storage';
 const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
+// Animated Loader Component
+const RaamaLoader = ({ isVisible }) => {
+  const [currentText, setCurrentText] = useState('');
+  const [isErasing, setIsErasing] = useState(false);
+  const fullText = 'रामा';
+  
+  useEffect(() => {
+    if (!isVisible) return;
+    
+    let timeout;
+    
+    if (!isErasing) {
+      // Writing animation
+      if (currentText.length < fullText.length) {
+        timeout = setTimeout(() => {
+          setCurrentText(fullText.slice(0, currentText.length + 1));
+        }, 200);
+      } else {
+        // Start erasing after a pause
+        timeout = setTimeout(() => {
+          setIsErasing(true);
+        }, 1000);
+      }
+    } else {
+      // Erasing animation
+      if (currentText.length > 0) {
+        timeout = setTimeout(() => {
+          setCurrentText(currentText.slice(0, -1));
+        }, 100);
+      } else {
+        // Start writing again after a pause
+        timeout = setTimeout(() => {
+          setIsErasing(false);
+        }, 500);
+      }
+    }
+    
+    return () => clearTimeout(timeout);
+  }, [currentText, isErasing, isVisible, fullText]);
+  
+  if (!isVisible) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="text-center">
+        <div className="relative">
+          <h1 
+            className="text-6xl md:text-8xl font-bold mb-4"
+            style={{ 
+              fontFamily: 'Tillana, cursive',
+              color: '#ff6b35',
+              textShadow: '0 0 40px rgba(255, 107, 53, 0.8)',
+              minHeight: '1.2em'
+            }}
+          >
+            {currentText}
+            <span className="animate-pulse">|</span>
+          </h1>
+        </div>
+        <div className="flex justify-center space-x-2 mt-6">
+          <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        </div>
+        <p className="text-gray-400 mt-4 text-lg" style={{ fontFamily: 'Tillana, cursive' }}>
+          कृपया प्रतीक्षा करें...
+        </p>
+      </div>
+    </div>
+  );
+};
+
 export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -85,6 +158,8 @@ export default function Login() {
       return;
     }
     
+    setIsLoading(true);
+    
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
       const response = await axios.post(`${API}${endpoint}`, formData);
@@ -93,21 +168,28 @@ export default function Login() {
         // Login successful
         setTokenInStorage(response.data.token);
         setUserInStorage(response.data.user);
-        toast.success('Welcome back!');
-        navigate('/');
+        toast.success('स्वागत है! Welcome back!');
+        
+        // Show loader for a moment before navigation
+        setTimeout(() => {
+          navigate('/');
+          setIsLoading(false);
+        }, 1500);
       } else {
         // Registration successful - redirect to OTP verification
-        toast.success('Registration successful! Please check your email for OTP.');
+        toast.success('पंजीकरण सफल! Registration successful! Please check your email for OTP.');
         
-        // Use setTimeout to ensure the toast is shown before navigation
+        // Show loader for a moment before navigation
         setTimeout(() => {
           navigate('/verify-otp', { 
             state: { email: formData.email },
             replace: true
           });
-        }, 100);
+          setIsLoading(false);
+        }, 1500);
       }
     } catch (error) {
+      setIsLoading(false);
       const errorMessage = error.response?.data?.detail || 'Something went wrong';
       
       // Check if it's an email verification error
@@ -149,22 +231,25 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8" style={{
-      background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)'
-    }}>
-      <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg xl:max-w-xl">
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2" style={{ 
-            fontFamily: 'Tillana, cursive',
-            color: '#ff6b35',
-            textShadow: '0 0 30px rgba(255, 107, 53, 0.5)'
-          }}>
-            रामा..!
-          </h1>
-          <p className="text-sm sm:text-base lg:text-lg text-gray-400" style={{ fontFamily: 'Macondo, cursive' }}>
-            The Poetic ERP
-          </p>
-        </div>
+    <>
+      <RaamaLoader isVisible={isLoading} />
+      
+      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8" style={{
+        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)'
+      }}>
+        <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg xl:max-w-xl">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2" style={{ 
+              fontFamily: 'Tillana, cursive',
+              color: '#ff6b35',
+              textShadow: '0 0 30px rgba(255, 107, 53, 0.5)'
+            }}>
+              रामा..!
+            </h1>
+            <p className="text-sm sm:text-base lg:text-lg text-gray-400" style={{ fontFamily: 'Macondo, cursive' }}>
+              The Poetic ERP
+            </p>
+          </div>
 
         <div className="glass-card p-4 sm:p-6 lg:p-8">
           <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6">
@@ -298,9 +383,19 @@ export default function Login() {
             <button
               data-testid="submit-button"
               type="submit"
-              className="w-full py-2 sm:py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-all hover:shadow-lg hover:shadow-orange-500/50 text-sm sm:text-base"
+              disabled={isLoading}
+              className="w-full py-2 sm:py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-600 disabled:opacity-70 text-white font-semibold rounded-lg transition-all hover:shadow-lg hover:shadow-orange-500/50 text-sm sm:text-base flex items-center justify-center gap-2"
             >
-              {isLogin ? 'Login' : 'Register'}
+              {isLoading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span style={{ fontFamily: 'Tillana, cursive' }}>
+                    {isLogin ? 'प्रवेश हो रहा है...' : 'पंजीकरण हो रहा है...'}
+                  </span>
+                </>
+              ) : (
+                isLogin ? 'Login' : 'Register'
+              )}
             </button>
           </form>
 
@@ -330,12 +425,16 @@ export default function Login() {
           )}
 
           <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-gray-400">
-            <p className="text-gray-500">
+            <p className="text-gray-500" style={{ fontFamily: 'Tillana, cursive' }}>
+              रामा में आपका स्वागत है - जहाँ कविता मिलती है तकनीक से
+            </p>
+            <p className="text-gray-600 text-xs mt-1">
               Welcome to रामा - Where Poetry Meets Technology
             </p>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
