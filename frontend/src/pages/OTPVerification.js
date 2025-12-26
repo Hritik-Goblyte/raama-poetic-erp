@@ -166,12 +166,7 @@ export default function OTPVerification() {
       setTokenInStorage(response.data.token);
       setUserInStorage(response.data.user);
       toast.success('Email verified successfully! Welcome to रामा!');
-      
-      // Show loader for a moment before navigation
-      setTimeout(() => {
-        navigate('/');
-        setLoading(false);
-      }, 1500);
+      navigate('/');
     } catch (error) {
       const errorMessage = error.response?.data?.detail || 'OTP verification failed';
       toast.error(errorMessage);
@@ -179,6 +174,7 @@ export default function OTPVerification() {
       // Clear OTP on error
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
+    } finally {
       setLoading(false);
     }
   };
@@ -205,19 +201,19 @@ export default function OTPVerification() {
       <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8" style={{
         background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)'
       }}>
-        <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg">
-          <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2" style={{ 
-              fontFamily: 'Tillana, cursive',
-              color: '#ff6b35',
-              textShadow: '0 0 30px rgba(255, 107, 53, 0.5)'
-            }}>
-              रामा..!
-            </h1>
-            <p className="text-sm sm:text-base lg:text-lg text-gray-400" style={{ fontFamily: 'Macondo, cursive' }}>
-              Email Verification
-            </p>
-          </div>
+      <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2" style={{ 
+            fontFamily: 'Tillana, cursive',
+            color: '#ff6b35',
+            textShadow: '0 0 30px rgba(255, 107, 53, 0.5)'
+          }}>
+            रामा..!
+          </h1>
+          <p className="text-sm sm:text-base lg:text-lg text-gray-400" style={{ fontFamily: 'Macondo, cursive' }}>
+            Email Verification
+          </p>
+        </div>
 
         <div className="glass-card p-4 sm:p-6 lg:p-8">
           <div className="text-center mb-4 sm:mb-6">

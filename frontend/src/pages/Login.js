@@ -72,9 +72,6 @@ const RaamaLoader = ({ isVisible }) => {
           <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
           <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
         </div>
-        <p className="text-gray-400 mt-4 text-lg" style={{ fontFamily: 'Tillana, cursive' }}>
-          कृपया प्रतीक्षा करें...
-        </p>
       </div>
     </div>
   );
@@ -168,7 +165,7 @@ export default function Login() {
         // Login successful
         setTokenInStorage(response.data.token);
         setUserInStorage(response.data.user);
-        toast.success('स्वागत है! Welcome back!');
+        toast.success('Welcome back!');
         
         // Show loader for a moment before navigation
         setTimeout(() => {
@@ -177,7 +174,7 @@ export default function Login() {
         }, 1500);
       } else {
         // Registration successful - redirect to OTP verification
-        toast.success('पंजीकरण सफल! Registration successful! Please check your email for OTP.');
+        toast.success('Registration successful! Please check your email for OTP.');
         
         // Show loader for a moment before navigation
         setTimeout(() => {
@@ -389,9 +386,6 @@ export default function Login() {
               {isLoading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  <span style={{ fontFamily: 'Tillana, cursive' }}>
-                    {isLogin ? 'प्रवेश हो रहा है...' : 'पंजीकरण हो रहा है...'}
-                  </span>
                 </>
               ) : (
                 isLogin ? 'Login' : 'Register'
