@@ -419,9 +419,6 @@ export default function Login() {
           )}
 
           <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-gray-400">
-            <p className="text-gray-500" style={{ fontFamily: 'Tillana, cursive' }}>
-              रामा में आपका स्वागत है - जहाँ कविता मिलती है तकनीक से
-            </p>
             <p className="text-gray-600 text-xs mt-1">
               Welcome to रामा - Where Poetry Meets Technology
             </p>

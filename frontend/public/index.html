@@ -57,6 +57,14 @@
             @media (max-width: 1023px) {
                 #developer-badge {
                     display: none !important;
+                    visibility: hidden !important;
+                }
+            }
+            
+            /* Position developer badge to avoid sidebar overlap on desktop */
+            @media (min-width: 1024px) {
+                #developer-badge {
+                    left: 280px !important; /* Sidebar is 256px + some margin */
                 }
             }
         </style>
