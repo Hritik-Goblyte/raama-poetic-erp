@@ -61,54 +61,54 @@
                 align-items: center !important;
                 position: fixed !important;
                 bottom: 20px;
-                right: 20px;
+                left: 20px;
                 text-decoration: none;
-                padding: 6px 10px;
-                font-family: -apple-system, BlinkMacSystemFont,
-                    &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell,
-                    &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;,
-                    sans-serif !important;
-                font-size: 12px !important;
+                padding: 8px 12px;
+                font-family: 'Tillana', cursive !important;
+                font-size: 13px !important;
                 z-index: 9999 !important;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-                border-radius: 8px !important;
-                background-color: #ffffff !important;
-                border: 1px solid rgba(255, 255, 255, 0.25) !important;
+                box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3) !important;
+                border-radius: 10px !important;
+                background: rgba(0, 0, 0, 0.8) !important;
+                backdrop-filter: blur(10px) !important;
+                border: 1px solid rgba(255, 107, 53, 0.3) !important;
+                transition: all 0.3s ease !important;
             "
+            onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 16px rgba(255, 107, 53, 0.4)'"
+            onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 12px rgba(255, 107, 53, 0.3)'"
         >
             <div
                 style="display: flex; flex-direction: row; align-items: center"
             >
                 <div
                     style="
-                        width: 20px; 
-                        height: 20px; 
-                        margin-right: 8px;
-                        background: #ff6b35;
+                        width: 22px; 
+                        height: 22px; 
+                        margin-right: 10px;
+                        background: linear-gradient(135deg, #ff6b35, #ff8c42);
                         border-radius: 50%;
                         display: flex;
                         align-items: center;
                         justify-content: center;
                         font-weight: bold;
                         color: white;
-                        font-size: 9px;
+                        font-size: 10px;
+                        box-shadow: 0 2px 6px rgba(255, 107, 53, 0.4);
                     "
                 >
                     HG
                 </div>
                 <p
                     style="
-                        color: #000000;
-                        font-family: -apple-system, BlinkMacSystemFont,
-                            &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu,
-                            Cantarell, &quot;Open Sans&quot;,
-                            &quot;Helvetica Neue&quot;, sans-serif !important;
-                        font-size: 12px !important;
+                        color: #ffffff;
+                        font-family: 'Tillana', cursive !important;
+                        font-size: 13px !important;
                         align-items: center;
-                        margin-bottom: 0;
+                        margin: 0;
+                        font-weight: 500;
                     "
                 >
-                    Made by Hritik Gautam
+                    Made by <span style='color: #ff6b35; font-weight: 600;'>Hritik Gautam</span>
                 </p>
             </div>
         </a>

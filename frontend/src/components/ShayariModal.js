@@ -341,7 +341,7 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
                   <div 
                     className="text-gray-200 text-base sm:text-lg lg:text-xl leading-relaxed whitespace-pre-line bg-purple-500/5 p-3 sm:p-4 rounded-lg"
                     style={{ 
-                      fontFamily: 'Style Script, cursive', 
+                      fontFamily: 'Tillana, cursive', 
                       fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)',
                       lineHeight: '1.8'
                     }}
