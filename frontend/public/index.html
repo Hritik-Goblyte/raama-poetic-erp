@@ -61,10 +61,12 @@
                 }
             }
             
-            /* Position developer badge to avoid sidebar overlap on desktop */
+            /* Position developer badge just below the + button on desktop */
             @media (min-width: 1024px) {
                 #developer-badge {
-                    left: 400px !important; /* Sidebar is 256px + some margin */
+                    bottom: 110px !important; /* + button is at 32px + 64px height + 14px gap = 110px */
+                    right: 32px !important; /* Same right position as + button */
+                    left: auto !important; /* Override the left positioning */
                 }
             }
         </style>
