@@ -369,7 +369,7 @@ export default function Dashboard({ theme, setTheme }) {
         <button
           data-testid="floating-new-shayari-button"
           onClick={handleFloatingButton}
-          className="lg:flex hidden fixed bottom-18 right-8 w-16 h-16 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-2xl hover:shadow-orange-500/50 transition-all items-center justify-center z-40"
+          className="lg:flex hidden fixed bottom-12 right-8 w-16 h-16 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-2xl hover:shadow-orange-500/50 transition-all items-center justify-center z-40"
         >
           <Plus size={28} />
         </button>
