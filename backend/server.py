@@ -16,6 +16,8 @@ import aiohttp
 import json
 import secrets
 import random
+import asyncio
+from contextlib import asynccontextmanager
 
 # Configure logging first
 logging.basicConfig(
@@ -64,9 +66,73 @@ db = client[os.environ['DB_NAME']]
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
+# Health check endpoint for self-ping
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for keeping the server alive"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "message": "रामा server is running"
+    }
+
+# Manual ping endpoint for testing
+@app.get("/ping")
+async def manual_ping():
+    """Manual ping endpoint for testing the self-ping functionality"""
+    try:
+        server_url = os.environ.get('RENDER_EXTERNAL_URL', 'http://localhost:8000')
+        health_url = f"{server_url}/health"
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(health_url, timeout=30) as response:
+                result = await response.json()
+                return {
+                    "ping_status": "success",
+                    "target_url": health_url,
+                    "response_status": response.status,
+                    "response_data": result,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+    except Exception as e:
+        return {
+            "ping_status": "failed",
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
+# Global variable to store the background task
+background_task = None
+
+async def self_ping():
+    """Background task to ping the server every 10 minutes to keep it alive"""
+    while True:
+        try:
+            await asyncio.sleep(600)  # Wait 10 minutes (600 seconds)
+            
+            # Get the server URL from environment or use default
+            server_url = os.environ.get('RENDER_EXTERNAL_URL', 'http://localhost:8000')
+            health_url = f"{server_url}/health"
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(health_url, timeout=30) as response:
+                    if response.status == 200:
+                        logger.info(f"✅ Self-ping successful: {health_url}")
+                    else:
+                        logger.warning(f"⚠️ Self-ping returned status {response.status}")
+                        
+        except asyncio.CancelledError:
+            logger.info("Self-ping task cancelled")
+            break
+        except Exception as e:
+            logger.error(f"❌ Self-ping failed: {str(e)}")
+            # Continue the loop even if ping fails
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
+    global background_task
+    
     logger.info("Starting up Raama backend...")
     logger.info(f"Gemini API Key configured: {bool(GEMINI_API_KEY)}")
     logger.info(f"Gemini package available: {genai is not None}")
@@ -80,6 +146,23 @@ async def startup_event():
             logger.error("❌ Failed to initialize Gemini AI on startup")
     else:
         logger.warning("⚠️ Gemini AI not available - missing package or API key")
+    
+    # Start the self-ping background task
+    background_task = asyncio.create_task(self_ping())
+    logger.info("🔄 Self-ping cron job started - server will ping itself every 10 minutes")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    global background_task
+    
+    if background_task:
+        background_task.cancel()
+        try:
+            await background_task
+        except asyncio.CancelledError:
+            pass
+        logger.info("🛑 Self-ping cron job stopped")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()

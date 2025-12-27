@@ -21,7 +21,8 @@ import {
   Star,
   Award,
   Heart,
-  Share2
+  Share2,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -33,11 +34,7 @@ import ProfilePictureModal from './ProfilePictureModal';
 const BACKEND_URL = 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
-console.log('Using hardcoded backend URL:', BACKEND_URL);
-console.log('API endpoint:', API);
-
 export default function AdminDashboard({ user, onLogout }) {
-  console.log('AdminDashboard rendering with user:', user);
   
   const [stats, setStats] = useState({});
   const [writers, setWriters] = useState([]);
@@ -82,19 +79,16 @@ export default function AdminDashboard({ user, onLogout }) {
     title: '',
     description: ''
   });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
   
   const token = localStorage.getItem('raama-admin-token');
-  console.log('Token from localStorage:', token ? 'Present' : 'Missing');
-  console.log('Token length:', token?.length);
-  console.log('Token starts with:', token?.substring(0, 20) + '...');
 
   useEffect(() => {
     // Test basic connectivity first
     const testConnection = async () => {
       try {
-        console.log('Testing basic connection to:', BACKEND_URL);
         const response = await axios.get(BACKEND_URL);
-        console.log('Backend connection test:', response.data);
       } catch (error) {
         console.error('Backend connection failed:', error);
       }
@@ -102,16 +96,20 @@ export default function AdminDashboard({ user, onLogout }) {
     
     testConnection();
     fetchAllData();
+    
+    // Set up auto-refresh every 2 minutes
+    const refreshInterval = setInterval(() => {
+      handleRefresh();
+    }, 2 * 60 * 1000); // 2 minutes
+    
+    // Cleanup interval on unmount
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const fetchAllData = async () => {
     setLoading(true);
-    console.log('Starting fetchAllData...');
-    console.log('Token:', token);
-    console.log('API URL:', API);
     
     try {
-      console.log('Making API calls...');
       const [statsRes, writersRes, readersRes, shayarisRes, requestsRes] = await Promise.all([
         axios.get(`${API}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${API}/users/writers`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -119,14 +117,6 @@ export default function AdminDashboard({ user, onLogout }) {
         axios.get(`${API}/shayaris`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${API}/writer-requests`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
-      
-      console.log('API calls successful:', {
-        stats: statsRes.data,
-        writers: writersRes.data?.length,
-        readers: readersRes.data?.length,
-        shayaris: shayarisRes.data?.length,
-        requests: requestsRes.data?.length
-      });
       
       // Also fetch spotlights
       fetchSpotlights();
@@ -136,28 +126,36 @@ export default function AdminDashboard({ user, onLogout }) {
       setReaders(readersRes.data);
       setShayaris(shayarisRes.data);
       setWriterRequests(requestsRes.data);
+      setLastRefresh(new Date());
 
       // Fetch admins separately with proper error handling
       try {
-        console.log('Fetching admins from:', `${API}/admin/users/admins`);
         const adminsRes = await axios.get(`${API}/admin/users/admins`, { 
           headers: { Authorization: `Bearer ${token}` } 
         });
-        console.log('Admins response:', adminsRes.data);
         setAdmins(adminsRes.data);
       } catch (adminError) {
         console.error('Error fetching admins:', adminError);
-        console.error('Admin error details:', adminError.response?.data);
         setAdmins([]);
         toast.error('Failed to load admin users');
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      console.error('Error details:', error.response?.data);
-      console.error('Error status:', error.response?.status);
       toast.error('Failed to load dashboard data: ' + (error.response?.data?.detail || error.message));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchAllData();
+      toast.success('Dashboard refreshed successfully!');
+    } catch (error) {
+      toast.error('Failed to refresh dashboard');
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -500,15 +498,32 @@ export default function AdminDashboard({ user, onLogout }) {
                 रामा Admin
               </h1>
               <p className="text-gray-400 text-sm">Welcome, {user.firstName}</p>
+              <p className="text-gray-500 text-xs">
+                Last updated: {format(lastRefresh, 'MMM dd, yyyy HH:mm:ss')}
+              </p>
             </div>
           </div>
-          <button
-            onClick={onLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-all w-full lg:w-auto justify-center"
-          >
-            <LogOut size={20} />
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all ${
+                isRefreshing 
+                  ? 'bg-gray-500/20 border-gray-500/30 text-gray-400 cursor-not-allowed' 
+                  : 'bg-green-500/20 hover:bg-green-500/30 border-green-500/30 text-green-400 hover:text-green-300'
+              }`}
+            >
+              <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 hover:text-red-300 transition-all w-full lg:w-auto justify-center"
+            >
+              <LogOut size={20} />
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
@@ -652,7 +667,6 @@ export default function AdminDashboard({ user, onLogout }) {
                       const response = await axios.get(`${API}/admin/debug/current-user`, {
                         headers: { Authorization: `Bearer ${token}` }
                       });
-                      console.log('Current admin user:', response.data);
                       const userData = response.data.current_user || response.data;
                       toast.success(`Debug Info: ${userData.email} (${userData.role})`);
                     } catch (error) {
@@ -776,7 +790,6 @@ export default function AdminDashboard({ user, onLogout }) {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {console.log('Rendering admins:', admins, 'Count:', admins.length)}
               {admins.map(admin => (
                 <div key={admin.id} className="glass-card p-6 border-2 border-purple-500/30">
                   <div className="flex items-start justify-between mb-4">

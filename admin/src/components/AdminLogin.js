@@ -61,8 +61,6 @@ export default function AdminLogin({ onLogin }) {
         }
       }
 
-      console.log('Login successful');
-
       if (!response.data.token) {
         throw new Error('No token received from server');
       }
