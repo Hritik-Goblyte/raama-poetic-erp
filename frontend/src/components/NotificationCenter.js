@@ -14,8 +14,8 @@ const NotificationCenter = ({ user }) => {
   useEffect(() => {
     if (user) {
       fetchNotifications();
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(fetchNotifications, 30000);
+      // Poll for new notifications every 10 seconds for better responsiveness
+      const interval = setInterval(fetchNotifications, 10000);
       return () => clearInterval(interval);
     }
   }, [user]);
@@ -46,8 +46,10 @@ const NotificationCenter = ({ user }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      setNotifications(response.data.notifications || []);
-      setUnreadCount(response.data.unreadCount || 0);
+      // Handle the correct response structure
+      const data = response.data;
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unreadCount || 0);
     } catch (error) {
       // Silently handle errors in production, show in development
       if (API_BASE_URL.includes('localhost')) {
@@ -60,50 +62,74 @@ const NotificationCenter = ({ user }) => {
   };
 
   const markAsRead = async (notificationId) => {
+    // Optimistic update - update UI immediately
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === notificationId ? { ...notif, isRead: true } : notif
+      )
+    );
+    setUnreadCount(prev => Math.max(0, prev - 1));
+
     try {
       const token = localStorage.getItem('raama-token');
       await axios.put(`${API_BASE_URL}/api/notifications/${notificationId}/read`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+    } catch (error) {
+      // Revert optimistic update on error
       setNotifications(prev => 
         prev.map(notif => 
-          notif.id === notificationId ? { ...notif, isRead: true } : notif
+          notif.id === notificationId ? { ...notif, isRead: false } : notif
         )
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
+      setUnreadCount(prev => prev + 1);
       console.error('Error marking notification as read:', error);
     }
   };
 
   const markAllAsRead = async () => {
+    // Optimistic update - update UI immediately
+    const unreadNotifications = notifications.filter(n => !n.isRead);
+    setNotifications(prev => prev.map(notif => ({ ...notif, isRead: true })));
+    setUnreadCount(0);
+
     try {
       const token = localStorage.getItem('raama-token');
       await axios.put(`${API_BASE_URL}/api/notifications/mark-all-read`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
-      setNotifications(prev => prev.map(notif => ({ ...notif, isRead: true })));
-      setUnreadCount(0);
     } catch (error) {
+      // Revert optimistic update on error
+      setNotifications(prev => prev.map(notif => {
+        const wasUnread = unreadNotifications.find(n => n.id === notif.id);
+        return wasUnread ? { ...notif, isRead: false } : notif;
+      }));
+      setUnreadCount(unreadNotifications.length);
       console.error('Error marking all notifications as read:', error);
     }
   };
 
   const deleteNotification = async (notificationId) => {
+    // Optimistic update - remove from UI immediately
+    const notificationToDelete = notifications.find(n => n.id === notificationId);
+    setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+    if (notificationToDelete && !notificationToDelete.isRead) {
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
+
     try {
       const token = localStorage.getItem('raama-token');
       await axios.delete(`${API_BASE_URL}/api/notifications/${notificationId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
-      setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
-      setUnreadCount(prev => {
-        const deletedNotif = notifications.find(n => n.id === notificationId);
-        return deletedNotif && !deletedNotif.isRead ? Math.max(0, prev - 1) : prev;
-      });
     } catch (error) {
+      // Revert optimistic update on error
+      setNotifications(prev => [...prev, notificationToDelete].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      ));
+      if (notificationToDelete && !notificationToDelete.isRead) {
+        setUnreadCount(prev => prev + 1);
+      }
       console.error('Error deleting notification:', error);
     }
   };

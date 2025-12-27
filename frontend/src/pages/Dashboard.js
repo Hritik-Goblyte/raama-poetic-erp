@@ -53,7 +53,35 @@ export default function Dashboard({ theme, setTheme }) {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    
+    // Initialize notification service
+    const initNotificationService = async () => {
+      try {
+        const notificationService = (await import('@/services/notificationService')).default;
+        
+        // Initialize real-time notifications
+        notificationService.initializeRealTimeNotifications(user.id);
+        
+        // Request notification permission
+        await notificationService.requestNotificationPermission();
+        
+        console.log('Notification service initialized');
+      } catch (error) {
+        console.error('Failed to initialize notification service:', error);
+      }
+    };
+    
+    if (user?.id) {
+      initNotificationService();
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      import('@/services/notificationService').then(({ default: notificationService }) => {
+        notificationService.disconnect();
+      }).catch(console.error);
+    };
+  }, [user?.id]);
 
   const fetchData = async () => {
     try {
@@ -65,7 +93,7 @@ export default function Dashboard({ theme, setTheme }) {
         api.get(`${API}/shayaris/featured`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] }))
       ]);
       setStats(statsRes.data);
-      setNotifications(notifsRes.data.slice(0, 5));
+      setNotifications(notifsRes.data.notifications?.slice(0, 5) || []);
       setRecentShayaris(shayarisRes.data.slice(0, 2)); // Only 2 latest shayaris for recent section
       setAllShayaris(shayarisRes.data); // All shayaris without limit
       setTrendingShayaris(trendingRes.data.slice(0, 6));
@@ -149,48 +177,22 @@ export default function Dashboard({ theme, setTheme }) {
   // Test notification function (for demo purposes)
   const sendTestNotification = async () => {
     try {
-      const testNotifications = [
-        {
-          type: 'like',
-          message: 'राज ने आपकी शायरी को पसंद किया',
-          shayariTitle: 'दिल की बात'
-        },
-        {
-          type: 'follow',
-          message: 'प्रिया शर्मा ने आपको फॉलो किया!',
-          senderName: 'प्रिया शर्मा'
-        },
-        {
-          type: 'feature',
-          message: 'आपकी शायरी को फीचर किया गया!',
-          shayariTitle: 'प्रेम की गाथा'
-        },
-        {
-          type: 'comment',
-          message: 'अमित ने आपकी शायरी पर टिप्पणी की',
-          shayariTitle: 'खुशी के पल',
-          senderName: 'अमित कुमार'
-        },
-        {
-          type: 'spotlight',
-          message: 'आपको Writer Spotlight में फीचर किया गया!',
-          title: 'इस महीने के बेहतरीन शायर'
-        }
-      ];
-
-      const randomNotification = testNotifications[Math.floor(Math.random() * testNotifications.length)];
+      // Import and use the notification service
+      const notificationService = (await import('@/services/notificationService')).default;
+      const result = await notificationService.sendTestNotification();
       
-      // Import and use the showToast function
+      // Also show a toast notification
       const { showToast } = await import('@/components/ToastNotification');
       showToast({
-        ...randomNotification,
-        duration: 6000
+        type: 'test',
+        message: 'Test notification sent successfully! 🔔',
+        duration: 4000
       });
       
-      toast.success('Test notification sent! 🔔');
+      toast.success('Test notification sent! Check your notifications.');
     } catch (error) {
       console.error('Test notification error:', error);
-      toast.error('Failed to send test notification');
+      toast.error('Failed to send test notification: ' + (error.response?.data?.detail || error.message));
     }
   };
 

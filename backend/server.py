@@ -1343,11 +1343,65 @@ async def create_notification_helper(
         notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
         await db.notifications.insert_one(notif_doc)
         
+        # Send push notification
+        await send_push_notification(user_id, notification)
+        
         logger.info(f"Created notification for user {user_id}: {notification_type}")
         return notification
     except Exception as e:
         logger.error(f"Error creating notification: {str(e)}")
         return None
+
+# Push notification helper
+async def send_push_notification(user_id: str, notification: Notification):
+    """Send push notification to user's devices"""
+    try:
+        # Get user's push subscriptions
+        subscriptions = await db.push_subscriptions.find(
+            {"userId": user_id}, 
+            {"_id": 0}
+        ).to_list(10)
+        
+        if not subscriptions:
+            return
+        
+        # Prepare notification payload
+        payload = {
+            "title": get_notification_title(notification.type),
+            "message": notification.message,
+            "type": notification.type,
+            "url": "/",
+            "timestamp": notification.createdAt.isoformat() if hasattr(notification.createdAt, 'isoformat') else str(notification.createdAt)
+        }
+        
+        # Send to each subscription (in a real app, you'd use a proper push service)
+        for subscription in subscriptions:
+            try:
+                # Here you would use a library like pywebpush to send actual push notifications
+                # For now, we'll just log it
+                logger.info(f"Would send push notification to {subscription['endpoint'][:50]}...")
+                logger.info(f"Payload: {payload}")
+            except Exception as sub_error:
+                logger.error(f"Error sending push to subscription: {str(sub_error)}")
+                # Remove invalid subscription
+                await db.push_subscriptions.delete_one({"id": subscription.get("id")})
+                
+    except Exception as e:
+        logger.error(f"Error sending push notification: {str(e)}")
+
+def get_notification_title(notification_type: str) -> str:
+    """Get notification title based on type"""
+    titles = {
+        "like": "New Like",
+        "comment": "New Comment", 
+        "follow": "New Follower",
+        "feature": "Shayari Featured",
+        "spotlight": "Writer Spotlight",
+        "new_shayari": "New Shayari",
+        "approval": "Request Approved",
+        "welcome": "Welcome"
+    }
+    return titles.get(notification_type, "New Notification")
 
 @api_router.get("/notifications")
 async def get_notifications(current_user: User = Depends(get_current_user)):
@@ -1425,13 +1479,77 @@ async def delete_notification(notification_id: str, current_user: User = Depends
         raise HTTPException(status_code=404, detail="Notification not found")
     return {"message": "Notification deleted"}
 
+@api_router.post("/notifications/test")
+async def send_test_notification(current_user: User = Depends(get_current_user)):
+    """Send a test notification to the current user"""
+    try:
+        # Create a test notification
+        test_notification = Notification(
+            userId=current_user.id,
+            senderId=current_user.id,
+            senderName="रामा System",
+            message="This is a test notification to verify the system is working!",
+            type="test",
+            title="Test Notification"
+        )
+        
+        # Save to database
+        notif_doc = test_notification.model_dump()
+        notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
+        await db.notifications.insert_one(notif_doc)
+        
+        # Try to send push notification
+        try:
+            await send_push_notification(current_user.id, {
+                "title": "Test Notification",
+                "message": "This is a test notification to verify the system is working!",
+                "type": "test"
+            })
+        except Exception as push_error:
+            logger.warning(f"Push notification failed: {str(push_error)}")
+        
+        return {
+            "message": "Test notification sent successfully!",
+            "notification": test_notification.model_dump()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error sending test notification: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to send test notification: {str(e)}")
+
+@api_router.get("/notifications/health")
+async def notification_system_health():
+    """Check the health of the notification system"""
+    try:
+        # Check database connection
+        db_health = await db.notifications.count_documents({}, limit=1)
+        
+        # Check push subscription collection
+        push_health = await db.push_subscriptions.count_documents({}, limit=1)
+        
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "notifications_collection": "accessible",
+            "push_subscriptions_collection": "accessible",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Notification system health check failed: {str(e)}")
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
 @api_router.get("/notifications/stream")
 async def notification_stream(token: str):
     """Server-Sent Events endpoint for real-time notifications"""
     
     # Verify token
     try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
@@ -1457,9 +1575,46 @@ async def notification_stream(token: str):
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET",
             "Access-Control-Allow-Headers": "Cache-Control"
         }
     )
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Cache-Control"
+        }
+    )
+
+@api_router.post("/push-subscription")
+async def create_push_subscription(
+    subscription_data: PushSubscriptionCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create or update push subscription for user"""
+    try:
+        subscription = subscription_data.subscription
+        
+        # Delete existing subscription for this user
+        await db.push_subscriptions.delete_many({"userId": current_user.id})
+        
+        # Create new subscription
+        push_sub = PushSubscription(
+            userId=current_user.id,
+            endpoint=subscription.get('endpoint', ''),
+            p256dh=subscription.get('keys', {}).get('p256dh', ''),
+            auth=subscription.get('keys', {}).get('auth', ''),
+            userAgent=subscription.get('userAgent', '')
+        )
+        
+        sub_doc = push_sub.model_dump()
+        sub_doc['createdAt'] = sub_doc['createdAt'].isoformat()
+        await db.push_subscriptions.insert_one(sub_doc)
+        
+        return {"message": "Push subscription created successfully"}
+    except Exception as e:
+        logger.error(f"Error creating push subscription: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create push subscription")
 
 @api_router.get("/stats")
 async def get_user_stats(current_user: User = Depends(get_current_user)):
@@ -3009,7 +3164,16 @@ async def deactivate_spotlight(spotlight_id: str, admin_user: User = Depends(get
 # Push Notifications System (Web Push)
 class PushSubscription(BaseModel):
     model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     userId: str
+    endpoint: str
+    p256dh: str
+    auth: str
+    userAgent: Optional[str] = None
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PushSubscriptionCreate(BaseModel):
+    subscription: dict  # Contains endpoint, keys, etc.
     endpoint: str
     keys: dict  # Contains p256dh and auth keys
     createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

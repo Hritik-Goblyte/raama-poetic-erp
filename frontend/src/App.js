@@ -40,7 +40,7 @@ function App() {
         // Initialize notifications
         notificationService.initializeRealTimeNotifications(parsedUser.id);
         
-        // Request notification permission
+        // Request notification permission and setup push notifications
         notificationService.requestNotificationPermission();
       } catch (error) {
         console.error('Error parsing user data:', error);

@@ -10,6 +10,7 @@ class NotificationService {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000;
+    this.pollingInterval = null;
   }
 
   // Initialize real-time notifications using Server-Sent Events
@@ -20,12 +21,6 @@ class NotificationService {
 
     const token = localStorage.getItem('raama-token');
     if (!token || !userId) return;
-
-    // Only try to connect in production or if backend is available
-    if (API_BASE_URL.includes('localhost')) {
-      console.log('Skipping real-time notifications in development mode');
-      return;
-    }
 
     try {
       this.eventSource = new EventSource(
@@ -59,11 +54,42 @@ class NotificationService {
             console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
             this.initializeRealTimeNotifications(userId);
           }, this.reconnectDelay * this.reconnectAttempts);
+        } else {
+          console.log('Max reconnection attempts reached, falling back to polling');
+          // Fall back to polling every 30 seconds
+          this.startPolling();
         }
       };
     } catch (error) {
       console.log('Failed to initialize notification stream, using polling instead');
+      this.startPolling();
     }
+  }
+
+  // Fallback polling method
+  startPolling() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+    }
+    
+    this.pollingInterval = setInterval(async () => {
+      try {
+        const data = await this.fetchNotifications();
+        // Check for new notifications and show toasts
+        if (data.notifications && data.notifications.length > 0) {
+          const latestNotification = data.notifications[0];
+          const lastNotificationTime = localStorage.getItem('lastNotificationTime');
+          const currentTime = new Date(latestNotification.createdAt).getTime();
+          
+          if (!lastNotificationTime || currentTime > parseInt(lastNotificationTime)) {
+            this.handleNewNotification(latestNotification);
+            localStorage.setItem('lastNotificationTime', currentTime.toString());
+          }
+        }
+      } catch (error) {
+        console.log('Polling failed:', error);
+      }
+    }, 30000); // Poll every 30 seconds
   }
 
   // Handle new notification
@@ -156,19 +182,98 @@ class NotificationService {
     }
   }
 
-  // Request notification permission
+  // Request notification permission and setup push notifications
   async requestNotificationPermission() {
     if (!('Notification' in window)) {
       console.log('This browser does not support notifications');
       return false;
     }
 
-    if (Notification.permission === 'default') {
-      const permission = await Notification.requestPermission();
-      return permission === 'granted';
+    if (!('serviceWorker' in navigator)) {
+      console.log('This browser does not support service workers');
+      return false;
     }
 
-    return Notification.permission === 'granted';
+    try {
+      // Request notification permission
+      let permission = Notification.permission;
+      if (permission === 'default') {
+        permission = await Notification.requestPermission();
+      }
+
+      if (permission === 'granted') {
+        // Setup push subscription
+        await this.setupPushSubscription();
+        return true;
+      } else {
+        console.log('Notification permission denied');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+      return false;
+    }
+  }
+
+  // Setup push subscription
+  async setupPushSubscription() {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      
+      // Check if already subscribed
+      let subscription = await registration.pushManager.getSubscription();
+      
+      if (!subscription) {
+        // Create new subscription
+        const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa40HI80NM9f4LiKqc7WDWN6_MHSd1el_RuQAE2hxbgamdBYrXPVdpXYA5NxQ8'; // You'll need to generate this
+        
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: this.urlBase64ToUint8Array(vapidPublicKey)
+        });
+      }
+
+      // Send subscription to server
+      await this.sendSubscriptionToServer(subscription);
+      
+      console.log('Push subscription setup complete');
+      return subscription;
+    } catch (error) {
+      console.error('Error setting up push subscription:', error);
+      return null;
+    }
+  }
+
+  // Convert VAPID key
+  urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  // Send subscription to server
+  async sendSubscriptionToServer(subscription) {
+    try {
+      const token = localStorage.getItem('raama-token');
+      if (!token) return;
+
+      await axios.post(`${API_BASE_URL}/api/push-subscription`, {
+        subscription: subscription.toJSON()
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (error) {
+      console.error('Error sending subscription to server:', error);
+    }
   }
 
   // Send notification to user
@@ -236,12 +341,42 @@ class NotificationService {
     }
   }
 
+  // Send test notification
+  async sendTestNotification() {
+    try {
+      const token = localStorage.getItem('raama-token');
+      const response = await axios.post(`${API_BASE_URL}/api/notifications/test`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      throw error;
+    }
+  }
+
+  // Check notification system health
+  async checkHealth() {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/notifications/health`);
+      return response.data;
+    } catch (error) {
+      console.error('Error checking notification health:', error);
+      return { status: 'unhealthy', error: error.message };
+    }
+  }
+
   // Disconnect notification stream
   disconnect() {
     if (this.eventSource) {
       this.eventSource.close();
       this.eventSource = null;
       this.isConnected = false;
+    }
+    
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
     }
   }
 
