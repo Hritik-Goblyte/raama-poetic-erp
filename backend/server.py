@@ -1579,12 +1579,6 @@ async def notification_stream(token: str):
             "Access-Control-Allow-Headers": "Cache-Control"
         }
     )
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Cache-Control"
-        }
-    )
 
 @api_router.post("/push-subscription")
 async def create_push_subscription(
