@@ -773,6 +773,23 @@ class AdminCreate(BaseModel):
     username: str
     adminSecret: str  # Individual admin secret
 
+# Push Notifications System (Web Push)
+class PushSubscription(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    userId: str
+    endpoint: str
+    p256dh: str
+    auth: str
+    userAgent: Optional[str] = None
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PushSubscriptionCreate(BaseModel):
+    subscription: dict  # Contains endpoint, keys, etc.
+    endpoint: str
+    keys: dict  # Contains p256dh and auth keys
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(days=30)
@@ -3154,23 +3171,6 @@ async def deactivate_spotlight(spotlight_id: str, admin_user: User = Depends(get
         raise HTTPException(status_code=404, detail="Spotlight not found")
     
     return {"message": "Spotlight deactivated successfully"}
-
-# Push Notifications System (Web Push)
-class PushSubscription(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    userId: str
-    endpoint: str
-    p256dh: str
-    auth: str
-    userAgent: Optional[str] = None
-    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class PushSubscriptionCreate(BaseModel):
-    subscription: dict  # Contains endpoint, keys, etc.
-    endpoint: str
-    keys: dict  # Contains p256dh and auth keys
-    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 @api_router.post("/notifications/subscribe")
 async def subscribe_to_push(subscription_data: dict, current_user: User = Depends(get_current_user)):
