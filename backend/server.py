@@ -1445,10 +1445,10 @@ async def notification_stream(token: str):
                 yield f"data: {json.dumps({'type': 'heartbeat', 'timestamp': datetime.now(timezone.utc).isoformat()})}\n\n"
                 await asyncio.sleep(30)
         except asyncio.CancelledError:
-            break
+            return
         except Exception as e:
             logger.error(f"Error in notification stream: {str(e)}")
-            break
+            return
     
     return StreamingResponse(
         event_generator(),
