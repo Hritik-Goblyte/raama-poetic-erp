@@ -112,7 +112,7 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
           </div>
           {!isMobile && (
             <div className="mt-4 flex justify-center">
-              <NotificationCenter user={user} />
+              {/* Notification bell moved to fixed position - see below */}
             </div>
           )}
         </div>
@@ -195,6 +195,15 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
               <Plus size={20} />
               <span className="text-xs">Create</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Fixed Notification Bell for Desktop - Top Right Corner */}
+      {!isMobile && (
+        <div className="hidden lg:block fixed top-6 right-6 z-50">
+          <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-700/50 rounded-full p-1 shadow-lg hover:bg-gray-900/90 transition-all">
+            <NotificationCenter user={user} />
           </div>
         </div>
       )}

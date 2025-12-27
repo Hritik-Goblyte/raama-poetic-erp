@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, Heart, MessageCircle, UserPlus, Star, Award, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import axios from 'axios';
@@ -9,7 +9,7 @@ const NotificationCenter = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     if (user) {
@@ -19,6 +19,25 @@ const NotificationCenter = ({ user }) => {
       return () => clearInterval(interval);
     }
   }, [user]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const fetchNotifications = async () => {
     try {
@@ -121,11 +140,15 @@ const NotificationCenter = ({ user }) => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       {/* Notification Bell */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-400 hover:text-orange-500 transition-colors"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="notification-bell relative p-2 text-gray-400 hover:text-orange-500 active:text-orange-600 transition-colors"
       >
         <Bell size={24} />
         {unreadCount > 0 && (
@@ -137,7 +160,7 @@ const NotificationCenter = ({ user }) => {
 
       {/* Notification Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-12 w-80 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 max-h-96 overflow-hidden">
+        <div className="notification-dropdown absolute right-0 top-12 w-80 sm:w-80 max-w-[calc(100vw-2rem)] bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 max-h-96 overflow-hidden transform -translate-x-2 sm:translate-x-0">
           {/* Header */}
           <div className="p-4 border-b border-gray-700 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">Notifications</h3>
@@ -171,7 +194,7 @@ const NotificationCenter = ({ user }) => {
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 border-b border-gray-800 hover:bg-gray-800/50 transition-colors ${
+                  className={`notification-item p-4 border-b border-gray-800 hover:bg-gray-800/50 transition-colors ${
                     !notification.isRead ? 'bg-orange-500/5 border-l-4 border-l-orange-500' : ''
                   }`}
                 >

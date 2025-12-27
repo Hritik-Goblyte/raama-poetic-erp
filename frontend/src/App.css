@@ -558,3 +558,39 @@ body {
     max-width: none;
   }
 }
+/* Fix mobile double-tap issues */
+.notification-bell {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Prevent double-tap zoom on notification elements */
+.notification-item,
+.notification-dropdown {
+  touch-action: manipulation;
+}
+
+/* Better mobile touch targets */
+@media (max-width: 768px) {
+  .notification-bell {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .notification-dropdown {
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    max-width: none;
+    transform: none;
+  }
+}
