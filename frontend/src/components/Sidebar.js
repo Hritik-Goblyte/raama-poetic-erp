@@ -63,7 +63,11 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
             }}>
               रामा..!
             </h1>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-sm text-gray-400">Welcome</p>
+                <p className="text-orange-500 font-semibold">@{user?.username || 'Guest'}</p>
+              </div>
               <NotificationCenter user={user} />
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -202,7 +206,11 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
       {/* Fixed Notification Bell for Desktop - Top Right Corner */}
       {!isMobile && (
         <div className="hidden lg:block fixed top-6 right-6 z-50">
-          <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-700/50 rounded-full p-1 shadow-lg hover:bg-gray-900/90 transition-all">
+          <div className="flex items-center gap-4 bg-gray-900/80 backdrop-blur-sm border border-gray-700/50 rounded-full px-4 py-2 shadow-lg hover:bg-gray-900/90 transition-all">
+            <div className="text-right">
+              <p className="text-sm text-gray-400">Welcome</p>
+              <p className="text-orange-500 font-semibold">@{user?.username || 'Guest'}</p>
+            </div>
             <NotificationCenter user={user} />
           </div>
         </div>

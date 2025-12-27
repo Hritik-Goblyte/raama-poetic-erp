@@ -85,6 +85,7 @@ export default function Dashboard({ theme, setTheme }) {
 
   const fetchData = async () => {
     try {
+      console.log('Fetching dashboard data...');
       const [statsRes, notifsRes, shayarisRes, trendingRes, featuredRes] = await Promise.all([
         api.get(`${API}/stats`, { headers: { Authorization: `Bearer ${token}` } }),
         api.get(`${API}/notifications`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -92,14 +93,24 @@ export default function Dashboard({ theme, setTheme }) {
         api.get(`${API}/shayaris/trending`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
         api.get(`${API}/shayaris/featured`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] }))
       ]);
+      
+      console.log('Stats response:', statsRes.data);
+      console.log('Notifications response:', notifsRes.data);
+      console.log('Shayaris response:', shayarisRes.data);
+      console.log('Trending response:', trendingRes.data);
+      console.log('Featured response:', featuredRes.data);
+      
       setStats(statsRes.data);
       setNotifications(notifsRes.data.notifications?.slice(0, 5) || []);
       setRecentShayaris(shayarisRes.data.slice(0, 2)); // Only 2 latest shayaris for recent section
       setAllShayaris(shayarisRes.data); // All shayaris without limit
       setTrendingShayaris(trendingRes.data.slice(0, 6));
       setFeaturedShayaris(featuredRes.data.slice(0, 6));
+      
+      console.log('Recent shayaris set:', shayarisRes.data.slice(0, 2));
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error('Failed to load dashboard data');
     }
   };
 
@@ -193,6 +204,23 @@ export default function Dashboard({ theme, setTheme }) {
     } catch (error) {
       console.error('Test notification error:', error);
       toast.error('Failed to send test notification: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleShayariUpdate = (updatedShayari) => {
+    // Update the shayari in all relevant arrays
+    const updateShayariInArray = (array) => {
+      return array.map(s => s.id === updatedShayari.id ? updatedShayari : s);
+    };
+
+    setRecentShayaris(prev => updateShayariInArray(prev));
+    setAllShayaris(prev => updateShayariInArray(prev));
+    setTrendingShayaris(prev => updateShayariInArray(prev));
+    setFeaturedShayaris(prev => updateShayariInArray(prev));
+    
+    // Update the selected shayari as well
+    if (selectedShayari?.id === updatedShayari.id) {
+      setSelectedShayari(updatedShayari);
     }
   };
 
@@ -325,39 +353,49 @@ export default function Dashboard({ theme, setTheme }) {
               ) : activeTab === 'recent' ? (
                 // Recent Shayaris - 2 cards side by side
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="recent-shayaris-grid">
-                  {getDisplayShayaris().map((shayari, index) => (
-                    <div 
-                      key={shayari.id} 
-                      className="glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.02]" 
-                      data-testid="shayari-card"
-                      onClick={() => handleShayariClick(shayari)}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <h3 className="text-xl font-bold text-orange-500 flex-1">{shayari.title}</h3>
-                      </div>
-                      <p className="text-gray-300 mb-4 line-clamp-2" style={{ fontFamily: 'Style Script, cursive', fontSize: '1.1rem' }}>
-                        {shayari.content}
-                      </p>
-                      <div className="flex items-center justify-between text-sm text-gray-400">
-                        <div>
-                          <span className="text-white">{shayari.authorName}</span>
-                          {shayari.authorUsername && (
-                            <span className="text-orange-400 text-xs block">@{shayari.authorUsername}</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center gap-1">
-                            <Heart size={16} className="text-orange-500" />
-                            {shayari.likes || 0}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar size={16} />
-                            {format(new Date(shayari.createdAt), 'MMM dd')}
-                          </span>
-                        </div>
+                  {getDisplayShayaris().length === 0 ? (
+                    <div className="col-span-2 text-center py-12">
+                      <div className="text-gray-400 mb-4">
+                        <BookOpen size={48} className="mx-auto mb-4 opacity-50" />
+                        <p className="text-lg">No recent shayaris found</p>
+                        <p className="text-sm mt-2">Be the first to create a beautiful shayari!</p>
                       </div>
                     </div>
-                  ))}
+                  ) : (
+                    getDisplayShayaris().map((shayari, index) => (
+                      <div 
+                        key={shayari.id} 
+                        className="glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.02]" 
+                        data-testid="shayari-card"
+                        onClick={() => handleShayariClick(shayari)}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <h3 className="text-xl font-bold text-orange-500 flex-1">{shayari.title}</h3>
+                        </div>
+                        <p className="text-gray-300 mb-4 line-clamp-2" style={{ fontFamily: 'Style Script, cursive', fontSize: '1.1rem' }}>
+                          {shayari.content}
+                        </p>
+                        <div className="flex items-center justify-between text-sm text-gray-400">
+                          <div>
+                            <span className="text-white">{shayari.authorName}</span>
+                            {shayari.authorUsername && (
+                              <span className="text-orange-400 text-xs block">@{shayari.authorUsername}</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1">
+                              <Heart size={16} className="text-orange-500" />
+                              {shayari.likes || 0}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar size={16} />
+                              {format(new Date(shayari.createdAt), 'MMM dd')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               ) : activeTab === 'all' ? (
                 // All Shayaris - Infinite Carousel
@@ -564,6 +602,7 @@ export default function Dashboard({ theme, setTheme }) {
         shayari={selectedShayari}
         isOpen={showShayariModal}
         onClose={() => setShowShayariModal(false)}
+        onShayariUpdate={handleShayariUpdate}
       />
     </div>
   );

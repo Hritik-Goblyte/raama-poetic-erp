@@ -1302,6 +1302,48 @@ async def get_my_shayaris(current_user: User = Depends(get_current_user)):
             s['createdAt'] = datetime.fromisoformat(s['createdAt'])
     return shayaris
 
+@api_router.put("/shayaris/{shayari_id}")
+async def update_shayari(
+    shayari_id: str,
+    shayari_data: ShayariCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update a shayari (only by the author)"""
+    # Check if shayari exists and belongs to current user
+    existing_shayari = await db.shayaris.find_one({"id": shayari_id}, {"_id": 0})
+    if not existing_shayari:
+        raise HTTPException(status_code=404, detail="Shayari not found")
+    
+    if existing_shayari["authorId"] != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only edit your own shayaris")
+    
+    # Update the shayari
+    update_data = {
+        "title": shayari_data.title,
+        "content": shayari_data.content,
+        "tags": shayari_data.tags,
+        "updatedAt": datetime.now(timezone.utc).isoformat()
+    }
+    
+    result = await db.shayaris.update_one(
+        {"id": shayari_id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Shayari not found")
+    
+    # Get updated shayari
+    updated_shayari = await db.shayaris.find_one({"id": shayari_id}, {"_id": 0})
+    
+    # Convert datetime strings back to datetime objects if needed
+    if isinstance(updated_shayari['createdAt'], str):
+        updated_shayari['createdAt'] = datetime.fromisoformat(updated_shayari['createdAt'])
+    if updated_shayari.get('updatedAt') and isinstance(updated_shayari['updatedAt'], str):
+        updated_shayari['updatedAt'] = datetime.fromisoformat(updated_shayari['updatedAt'])
+    
+    return updated_shayari
+
 @api_router.delete("/shayaris/{shayari_id}")
 async def delete_shayari(shayari_id: str, current_user: User = Depends(get_current_user)):
     shayari = await db.shayaris.find_one({"id": shayari_id}, {"_id": 0})

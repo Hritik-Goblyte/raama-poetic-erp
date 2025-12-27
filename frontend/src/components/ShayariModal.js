@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Heart, Share2, Bookmark, X, Calendar, User, Languages, Loader2, MessageCircle, Facebook, Twitter, Instagram } from 'lucide-react';
+import { Heart, Share2, Bookmark, X, Calendar, User, Languages, Loader2, MessageCircle, Facebook, Twitter, Instagram, Edit, Save, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -12,7 +12,7 @@ import notificationService from '@/services/notificationService';
 const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
-export default function ShayariModal({ shayari, isOpen, onClose }) {
+export default function ShayariModal({ shayari, isOpen, onClose, onShayariUpdate }) {
   const [translatedContent, setTranslatedContent] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
@@ -24,6 +24,12 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [showAiAnalysis, setShowAiAnalysis] = useState(false);
   const [loadingAiAnalysis, setLoadingAiAnalysis] = useState(false);
+  
+  // Edit functionality states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem('raama-user') || '{}');
   const token = localStorage.getItem('raama-token');
@@ -34,6 +40,9 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
       checkBookmarkStatus();
       fetchAuthorInfo();
       fetchAiAnalysis();
+      // Initialize edit form with current values
+      setEditTitle(shayari.title || '');
+      setEditContent(shayari.content || '');
     }
   }, [shayari?.id]);
 
@@ -50,6 +59,8 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
       setShowAiAnalysis(false);
       setLoadingAiAnalysis(false);
       setAuthorUser(null);
+      setIsEditing(false);
+      setIsSaving(false);
     }
   }, [shayari?.id]);
 
@@ -68,6 +79,8 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
       setAuthorUser(null);
       setIsBookmarked(false);
       setCheckingBookmark(true);
+      setIsEditing(false);
+      setIsSaving(false);
     }
   }, [isOpen]);
   
@@ -309,6 +322,52 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
     }
   };
 
+  const handleEditStart = () => {
+    setIsEditing(true);
+    setEditTitle(shayari.title);
+    setEditContent(shayari.content);
+  };
+
+  const handleEditCancel = () => {
+    setIsEditing(false);
+    setEditTitle(shayari.title);
+    setEditContent(shayari.content);
+  };
+
+  const handleEditSave = async () => {
+    if (!editTitle.trim() || !editContent.trim()) {
+      toast.error('Title and content are required');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await axios.put(`${API}/shayaris/${shayari.id}`, {
+        title: editTitle.trim(),
+        content: editContent.trim(),
+        tags: shayari.tags || []
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Update the shayari object
+      shayari.title = editTitle.trim();
+      shayari.content = editContent.trim();
+      
+      // Call the update callback if provided
+      if (onShayariUpdate) {
+        onShayariUpdate(response.data);
+      }
+
+      setIsEditing(false);
+      toast.success('Shayari updated successfully! ✨');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update shayari');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
@@ -328,27 +387,87 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
           <div className="flex-1 flex flex-col min-h-0">
             {/* Header with Title */}
             <div className="sticky top-0 bg-gradient-to-b from-gray-900 to-gray-900/90 backdrop-blur-sm border-b border-orange-500/20 p-3 sm:p-4 lg:p-6 pb-3 sm:pb-4">
-              <h2 
-                className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-orange-500 pr-8 sm:pr-12 leading-tight"
-                style={{ fontFamily: 'Tillana, cursive' }}
-              >
-                {shayari.title}
-              </h2>
-              <div className="flex items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-400">
-                <span className="flex items-center gap-1">
-                  <Calendar size={14} className="sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">
-                    {format(new Date(shayari.createdAt), 'MMMM dd, yyyy')}
-                  </span>
-                  <span className="sm:hidden">
-                    {format(new Date(shayari.createdAt), 'MMM dd, yyyy')}
-                  </span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <Heart size={14} className="sm:w-4 sm:h-4 text-orange-500" />
-                  {shayari.likes} likes
-                </span>
-              </div>
+              {isEditing ? (
+                // Edit Form
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-orange-500">Edit Shayari</h3>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleEditCancel}
+                        disabled={isSaving}
+                        className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                      >
+                        <XCircle size={18} />
+                      </button>
+                      <button
+                        onClick={handleEditSave}
+                        disabled={isSaving || !editTitle.trim() || !editContent.trim()}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSaving ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <Save size={16} />
+                        )}
+                        <span className="text-sm">{isSaving ? 'Saving...' : 'Save'}</span>
+                      </button>
+                    </div>
+                  </div>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder="Shayari Title"
+                    className="w-full px-3 py-2 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+                    style={{ fontFamily: 'Tillana, cursive' }}
+                  />
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    placeholder="Write your shayari here..."
+                    rows={6}
+                    className="w-full px-3 py-2 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none resize-none"
+                    style={{ fontFamily: 'Tillana, cursive', fontSize: '1.1rem' }}
+                  />
+                </div>
+              ) : (
+                // Display Mode
+                <div>
+                  <div className="flex items-start justify-between">
+                    <h2 
+                      className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-orange-500 flex-1 leading-tight"
+                      style={{ fontFamily: 'Tillana, cursive' }}
+                    >
+                      {shayari.title}
+                    </h2>
+                    {isCurrentUser && (
+                      <button
+                        onClick={handleEditStart}
+                        className="ml-3 p-2 text-gray-400 hover:text-orange-500 transition-colors"
+                        title="Edit Shayari"
+                      >
+                        <Edit size={18} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <Calendar size={14} className="sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">
+                        {format(new Date(shayari.createdAt), 'MMMM dd, yyyy')}
+                      </span>
+                      <span className="sm:hidden">
+                        {format(new Date(shayari.createdAt), 'MMM dd, yyyy')}
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Heart size={14} className="sm:w-4 sm:h-4 text-orange-500" />
+                      {shayari.likes} likes
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Scrollable Content */}
@@ -540,6 +659,16 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
             {/* Mobile Action Bar */}
             <div className="lg:hidden border-t border-gray-700/50 p-3 sm:p-4 bg-gray-900/50 backdrop-blur-sm">
               <div className="flex justify-around items-center">
+                {isCurrentUser && (
+                  <button
+                    onClick={handleEditStart}
+                    className="flex flex-col items-center gap-1 p-2 rounded-lg text-gray-400 hover:text-orange-500 transition-all"
+                  >
+                    <Edit size={20} className="sm:w-6 sm:h-6" />
+                    <span className="text-xs">Edit</span>
+                  </button>
+                )}
+
                 <button
                   onClick={handleLike}
                   className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
@@ -678,6 +807,16 @@ export default function ShayariModal({ shayari, isOpen, onClose }) {
 
             {/* Action Buttons */}
             <div className="flex-1 p-6 space-y-4 overflow-y-auto">
+              {isCurrentUser && (
+                <button
+                  onClick={handleEditStart}
+                  className="w-full flex items-center justify-center gap-3 py-4 px-5 bg-orange-500/10 hover:bg-orange-500/20 border-2 border-orange-500/20 hover:border-orange-500/40 rounded-xl text-orange-400 transition-all group font-medium"
+                >
+                  <Edit size={22} className="group-hover:scale-110 transition-transform" />
+                  <span className="text-base xl:text-lg">Edit Shayari</span>
+                </button>
+              )}
+
               <button
                 onClick={handleLike}
                 className={`w-full flex items-center justify-between py-4 px-5 border-2 rounded-xl transition-all group font-medium ${
