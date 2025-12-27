@@ -3,6 +3,7 @@ import { Home, BookOpen, Users, User, LogOut, Moon, Sun, Plus, Menu, X, Edit, Ba
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState, useEffect } from 'react';
+import NotificationCenter from './NotificationCenter';
 
 export default function Sidebar({ theme, setTheme, onNewShayari }) {
   const navigate = useNavigate();
@@ -62,12 +63,15 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
             }}>
               रामा..!
             </h1>
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-orange-500 hover:bg-orange-500/20 rounded-lg transition-all"
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            <div className="flex items-center gap-2">
+              <NotificationCenter user={user} />
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 text-orange-500 hover:bg-orange-500/20 rounded-lg transition-all"
+              >
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -106,6 +110,11 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
               </button>
             )}
           </div>
+          {!isMobile && (
+            <div className="mt-4 flex justify-center">
+              <NotificationCenter user={user} />
+            </div>
+          )}
         </div>
 
         <button

@@ -146,6 +146,43 @@ export default function Dashboard({ theme, setTheme }) {
     }
   };
 
+  // Test notification function (for demo purposes)
+  const sendTestNotification = async () => {
+    try {
+      const testNotifications = [
+        {
+          type: 'like',
+          message: 'Someone liked your shayari "दिल की बात"',
+          shayariTitle: 'दिल की बात'
+        },
+        {
+          type: 'follow',
+          message: 'राहुल शर्मा started following you!'
+        },
+        {
+          type: 'feature',
+          message: 'Your shayari has been featured!',
+          shayariTitle: 'प्रेम की गाथा'
+        },
+        {
+          type: 'comment',
+          message: 'प्रिया ने commented on your shayari',
+          shayariTitle: 'खुशी के पल'
+        }
+      ];
+
+      const randomNotification = testNotifications[Math.floor(Math.random() * testNotifications.length)];
+      
+      // Import and use the showToast function
+      const { showToast } = await import('@/components/ToastNotification');
+      showToast(randomNotification);
+      
+      toast.success('Test notification sent!');
+    } catch (error) {
+      toast.error('Failed to send test notification');
+    }
+  };
+
   const handleShayariClick = async (shayari) => {
     // Record view
     try {
@@ -457,6 +494,15 @@ export default function Dashboard({ theme, setTheme }) {
           className="lg:flex hidden fixed bottom-12 right-8 w-16 h-16 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-2xl hover:shadow-orange-500/50 transition-all items-center justify-center z-40"
         >
           <Plus size={28} />
+        </button>
+
+        {/* Test Notification Button (for demo) */}
+        <button
+          onClick={sendTestNotification}
+          className="lg:flex hidden fixed bottom-32 right-8 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-2xl hover:shadow-blue-500/50 transition-all items-center justify-center z-40"
+          title="Test Notification"
+        >
+          🔔
         </button>
       </div>
 

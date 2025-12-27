@@ -694,10 +694,27 @@ class Notification(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     userId: str
+    senderId: Optional[str] = None
+    senderName: Optional[str] = None
+    message: str
+    type: str  # like, comment, follow, feature, spotlight, view_milestone
+    shayariId: Optional[str] = None
+    shayariTitle: Optional[str] = None
+    title: Optional[str] = None  # For spotlight notifications
+    viewCount: Optional[int] = None  # For view milestone notifications
+    isRead: bool = False
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class NotificationCreate(BaseModel):
+    recipientId: str
+    senderId: Optional[str] = None
+    senderName: Optional[str] = None
     message: str
     type: str
-    read: bool = False
-    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    shayariId: Optional[str] = None
+    shayariTitle: Optional[str] = None
+    title: Optional[str] = None
+    viewCount: Optional[int] = None
 
 class WriterRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -886,14 +903,11 @@ async def verify_otp(request: OTPVerificationRequest):
     )
     
     # Create welcome notification
-    welcome_notif = Notification(
-        userId=user_doc['id'],
+    await create_notification_helper(
+        user_id=user_doc['id'],
         message=f"Welcome to Raama, {user_doc['firstName']}! Your email has been verified successfully.",
-        type="welcome"
+        notification_type="welcome"
     )
-    notif_doc = welcome_notif.model_dump()
-    notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
-    await db.notifications.insert_one(notif_doc)
     
     # Create token for login
     user = User(**{k: v for k, v in user_doc.items() if k != 'password'})
@@ -956,14 +970,11 @@ async def verify_email(request: EmailVerificationRequest):
     )
     
     # Create verification success notification
-    verification_notif = Notification(
-        userId=user_doc['id'],
+    await create_notification_helper(
+        user_id=user_doc['id'],
         message="Email verified successfully! You can now fully access your account.",
-        type="verification"
+        notification_type="verification"
     )
-    notif_doc = verification_notif.model_dump()
-    notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
-    await db.notifications.insert_one(notif_doc)
     
     return {"message": "Email verified successfully! You can now login."}
 
@@ -1241,14 +1252,15 @@ async def create_shayari(shayari_data: ShayariCreate, current_user: User = Depen
     try:
         followers = await db.follows.find({"followingId": current_user.id}, {"_id": 0}).to_list(1000)
         for follow in followers:
-            notification = Notification(
-                userId=follow['followerId'],
-                message=f"{current_user.firstName} {current_user.lastName} (@{current_user.username}) posted a new shayari: '{shayari.title}'",
-                type="new_shayari"
+            await create_notification_helper(
+                user_id=follow['followerId'],
+                message=f"{current_user.firstName} {current_user.lastName} posted a new shayari",
+                notification_type="new_shayari",
+                sender_id=current_user.id,
+                sender_name=f"{current_user.firstName} {current_user.lastName}",
+                shayari_id=shayari.id,
+                shayari_title=shayari.title
             )
-            notif_doc = notification.model_dump()
-            notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
-            await db.notifications.insert_one(notif_doc)
     except Exception as e:
         logger.error(f"Error creating follow notifications: {str(e)}")
         # Don't fail the request if notifications fail
@@ -1300,26 +1312,113 @@ async def get_readers(admin_user: User = Depends(get_admin_user)):
             r['createdAt'] = datetime.fromisoformat(r['createdAt'])
     return readers
 
-@api_router.get("/notifications", response_model=List[Notification])
+# Helper function to create notifications
+async def create_notification_helper(
+    user_id: str,
+    message: str,
+    notification_type: str,
+    sender_id: str = None,
+    sender_name: str = None,
+    shayari_id: str = None,
+    shayari_title: str = None,
+    title: str = None,
+    view_count: int = None
+):
+    """Helper function to create and store notifications"""
+    try:
+        notification = Notification(
+            userId=user_id,
+            senderId=sender_id,
+            senderName=sender_name,
+            message=message,
+            type=notification_type,
+            shayariId=shayari_id,
+            shayariTitle=shayari_title,
+            title=title,
+            viewCount=view_count
+        )
+        
+        notif_doc = notification.model_dump()
+        notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
+        await db.notifications.insert_one(notif_doc)
+        
+        logger.info(f"Created notification for user {user_id}: {notification_type}")
+        return notification
+    except Exception as e:
+        logger.error(f"Error creating notification: {str(e)}")
+        return None
+
+@api_router.get("/notifications")
 async def get_notifications(current_user: User = Depends(get_current_user)):
-    notifications = await db.notifications.find({"userId": current_user.id}, {"_id": 0}).sort("createdAt", -1).to_list(50)
+    """Get user's notifications with unread count"""
+    notifications = await db.notifications.find(
+        {"userId": current_user.id}, 
+        {"_id": 0}
+    ).sort("createdAt", -1).limit(50).to_list(50)
+    
+    # Convert datetime strings back to datetime objects if needed
     for n in notifications:
         if isinstance(n['createdAt'], str):
             n['createdAt'] = datetime.fromisoformat(n['createdAt'])
-    return notifications
+    
+    # Get unread count
+    unread_count = await db.notifications.count_documents({
+        "userId": current_user.id, 
+        "isRead": False
+    })
+    
+    return {
+        "notifications": notifications,
+        "unreadCount": unread_count
+    }
+
+@api_router.post("/notifications")
+async def create_notification(
+    notification_data: NotificationCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new notification"""
+    notification = Notification(
+        userId=notification_data.recipientId,
+        senderId=notification_data.senderId or current_user.id,
+        senderName=notification_data.senderName or f"{current_user.firstName} {current_user.lastName}",
+        message=notification_data.message,
+        type=notification_data.type,
+        shayariId=notification_data.shayariId,
+        shayariTitle=notification_data.shayariTitle,
+        title=notification_data.title,
+        viewCount=notification_data.viewCount
+    )
+    
+    notif_doc = notification.model_dump()
+    notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
+    await db.notifications.insert_one(notif_doc)
+    
+    return {"message": "Notification created successfully", "id": notification.id}
 
 @api_router.put("/notifications/{notification_id}/read")
 async def mark_notification_read(notification_id: str, current_user: User = Depends(get_current_user)):
+    """Mark a notification as read"""
     result = await db.notifications.update_one(
         {"id": notification_id, "userId": current_user.id},
-        {"$set": {"read": True}}
+        {"$set": {"isRead": True}}
     )
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Notification not found")
     return {"message": "Notification marked as read"}
 
+@api_router.put("/notifications/mark-all-read")
+async def mark_all_notifications_read(current_user: User = Depends(get_current_user)):
+    """Mark all notifications as read for the current user"""
+    result = await db.notifications.update_many(
+        {"userId": current_user.id, "isRead": False},
+        {"$set": {"isRead": True}}
+    )
+    return {"message": f"Marked {result.modified_count} notifications as read"}
+
 @api_router.delete("/notifications/{notification_id}")
 async def delete_notification(notification_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a notification"""
     result = await db.notifications.delete_one({"id": notification_id, "userId": current_user.id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Notification not found")
@@ -1330,7 +1429,7 @@ async def get_user_stats(current_user: User = Depends(get_current_user)):
     my_creations = await db.shayaris.count_documents({"authorId": current_user.id})
     total_shayaris = await db.shayaris.count_documents({})
     total_writers = await db.users.count_documents({"role": "writer"})
-    unread_notifications = await db.notifications.count_documents({"userId": current_user.id, "read": False})
+    unread_notifications = await db.notifications.count_documents({"userId": current_user.id, "isRead": False})
     
     return {
         "myCreations": my_creations,
@@ -1612,14 +1711,11 @@ async def approve_writer_request(request_id: str, admin_user: User = Depends(get
         {"$set": {"status": "approved", "processedAt": datetime.now(timezone.utc).isoformat()}}
     )
     
-    notif = Notification(
-        userId=request['userId'],
+    await create_notification_helper(
+        user_id=request['userId'],
         message="Congratulations! Your writer request has been approved. Please log out and log back in to access writer features.",
-        type="approval"
+        notification_type="approval"
     )
-    notif_doc = notif.model_dump()
-    notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
-    await db.notifications.insert_one(notif_doc)
     
     return {"message": "Writer request approved"}
 
@@ -1636,14 +1732,11 @@ async def reject_writer_request(request_id: str, admin_user: User = Depends(get_
         {"$set": {"status": "rejected", "processedAt": datetime.now(timezone.utc).isoformat()}}
     )
     
-    notif = Notification(
-        userId=request['userId'],
+    await create_notification_helper(
+        user_id=request['userId'],
         message="Your writer request has been reviewed. Please contact admin for more information.",
-        type="rejection"
+        notification_type="rejection"
     )
-    notif_doc = notif.model_dump()
-    notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
-    await db.notifications.insert_one(notif_doc)
     
     return {"message": "Writer request rejected"}
 
@@ -1778,14 +1871,11 @@ async def change_user_role(user_id: str, role_data: dict, admin_user: User = Dep
     )
     
     # Create notification for user
-    notif = Notification(
-        userId=user_id,
+    await create_notification_helper(
+        user_id=user_id,
         message=f"Your role has been changed to {new_role} by admin. Please log out and log back in to access new features.",
-        type="role_change"
+        notification_type="role_change"
     )
-    notif_doc = notif.model_dump()
-    notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
-    await db.notifications.insert_one(notif_doc)
     
     return {"message": f"User role changed to {new_role} successfully"}
 
@@ -2138,14 +2228,13 @@ async def follow_user(user_id: str, current_user: User = Depends(get_current_use
     await db.follows.insert_one(doc)
     
     # Create notification
-    notif = Notification(
-        userId=user_id,
-        message=f"{current_user.firstName} {current_user.lastName} (@{current_user.username}) started following you!",
-        type="follow"
+    await create_notification_helper(
+        user_id=user_id,
+        message=f"{current_user.firstName} {current_user.lastName} started following you!",
+        notification_type="follow",
+        sender_id=current_user.id,
+        sender_name=f"{current_user.firstName} {current_user.lastName}"
     )
-    notif_doc = notif.model_dump()
-    notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
-    await db.notifications.insert_one(notif_doc)
     
     # Log activity
     activity = UserActivity(
@@ -2226,14 +2315,15 @@ async def like_shayari(shayari_id: str, current_user: User = Depends(get_current
     
     # Create notification for author (if not self-like)
     if shayari['authorId'] != current_user.id:
-        notif = Notification(
-            userId=shayari['authorId'],
-            message=f"{current_user.firstName} {current_user.lastName} liked your shayari '{shayari['title']}'",
-            type="like"
+        await create_notification_helper(
+            user_id=shayari['authorId'],
+            message=f"{current_user.firstName} {current_user.lastName} liked your shayari",
+            notification_type="like",
+            sender_id=current_user.id,
+            sender_name=f"{current_user.firstName} {current_user.lastName}",
+            shayari_id=shayari_id,
+            shayari_title=shayari['title']
         )
-        notif_doc = notif.model_dump()
-        notif_doc['createdAt'] = notif_doc['createdAt'].isoformat()
-        await db.notifications.insert_one(notif_doc)
     
     # Log activity
     activity = UserActivity(

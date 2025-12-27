@@ -1,7 +1,7 @@
 {
   "short_name": "रामा",
-  "name": "रामा - Poetry Platform",
-  "description": "A beautiful platform for sharing and discovering Hindi poetry and shayaris",
+  "name": "रामा - Poetic ERP",
+  "description": "A beautiful platform for Hindi poetry and shayari",
   "icons": [
     {
       "src": "favicon.ico",
@@ -9,23 +9,24 @@
       "type": "image/x-icon"
     },
     {
-      "src": "logo.svg",
-      "type": "image/svg+xml",
+      "src": "favicon.ico",
+      "type": "image/x-icon",
       "sizes": "192x192"
     },
     {
-      "src": "logo.svg",
-      "type": "image/svg+xml",
+      "src": "favicon.ico",
+      "type": "image/x-icon",
       "sizes": "512x512"
     }
   ],
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#ff6b35",
-  "background_color": "#0a0a0a",
+  "background_color": "#000000",
   "orientation": "portrait-primary",
-  "categories": ["entertainment", "social", "lifestyle"],
+  "categories": ["social", "entertainment", "lifestyle"],
   "lang": "hi",
+  "dir": "ltr",
   "scope": "/",
   "prefer_related_applications": false
 }
