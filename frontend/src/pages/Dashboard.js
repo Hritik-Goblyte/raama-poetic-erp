@@ -152,22 +152,29 @@ export default function Dashboard({ theme, setTheme }) {
       const testNotifications = [
         {
           type: 'like',
-          message: 'Someone liked your shayari "दिल की बात"',
+          message: 'राज ने आपकी शायरी को पसंद किया',
           shayariTitle: 'दिल की बात'
         },
         {
           type: 'follow',
-          message: 'राहुल शर्मा started following you!'
+          message: 'प्रिया शर्मा ने आपको फॉलो किया!',
+          senderName: 'प्रिया शर्मा'
         },
         {
           type: 'feature',
-          message: 'Your shayari has been featured!',
+          message: 'आपकी शायरी को फीचर किया गया!',
           shayariTitle: 'प्रेम की गाथा'
         },
         {
           type: 'comment',
-          message: 'प्रिया ने commented on your shayari',
-          shayariTitle: 'खुशी के पल'
+          message: 'अमित ने आपकी शायरी पर टिप्पणी की',
+          shayariTitle: 'खुशी के पल',
+          senderName: 'अमित कुमार'
+        },
+        {
+          type: 'spotlight',
+          message: 'आपको Writer Spotlight में फीचर किया गया!',
+          title: 'इस महीने के बेहतरीन शायर'
         }
       ];
 
@@ -175,10 +182,14 @@ export default function Dashboard({ theme, setTheme }) {
       
       // Import and use the showToast function
       const { showToast } = await import('@/components/ToastNotification');
-      showToast(randomNotification);
+      showToast({
+        ...randomNotification,
+        duration: 6000
+      });
       
-      toast.success('Test notification sent!');
+      toast.success('Test notification sent! 🔔');
     } catch (error) {
+      console.error('Test notification error:', error);
       toast.error('Failed to send test notification');
     }
   };

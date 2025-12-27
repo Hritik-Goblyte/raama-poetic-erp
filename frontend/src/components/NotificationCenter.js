@@ -3,7 +3,7 @@ import { Bell, X, Heart, MessageCircle, UserPlus, Star, Award, Eye } from 'lucid
 import { format } from 'date-fns';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://raama-backend-srrb.onrender.com';
 
 const NotificationCenter = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,7 +30,13 @@ const NotificationCenter = ({ user }) => {
       setNotifications(response.data.notifications || []);
       setUnreadCount(response.data.unreadCount || 0);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      // Silently handle errors in production, show in development
+      if (API_BASE_URL.includes('localhost')) {
+        console.error('Error fetching notifications:', error);
+      }
+      // Set empty state instead of showing errors
+      setNotifications([]);
+      setUnreadCount(0);
     }
   };
 

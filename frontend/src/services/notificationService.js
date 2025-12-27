@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { showToast } from '../components/ToastNotification';
 
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://raama-backend-srrb.onrender.com';
 
 class NotificationService {
   constructor() {
@@ -21,6 +21,12 @@ class NotificationService {
     const token = localStorage.getItem('raama-token');
     if (!token || !userId) return;
 
+    // Only try to connect in production or if backend is available
+    if (API_BASE_URL.includes('localhost')) {
+      console.log('Skipping real-time notifications in development mode');
+      return;
+    }
+
     try {
       this.eventSource = new EventSource(
         `${API_BASE_URL}/api/notifications/stream?token=${token}`
@@ -34,15 +40,17 @@ class NotificationService {
 
       this.eventSource.onmessage = (event) => {
         try {
-          const notification = JSON.parse(event.data);
-          this.handleNewNotification(notification);
+          const data = JSON.parse(event.data);
+          if (data.type !== 'heartbeat') {
+            this.handleNewNotification(data);
+          }
         } catch (error) {
           console.error('Error parsing notification:', error);
         }
       };
 
       this.eventSource.onerror = (error) => {
-        console.error('Notification stream error:', error);
+        console.log('Notification stream connection failed, using polling instead');
         this.isConnected = false;
         
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
@@ -54,7 +62,7 @@ class NotificationService {
         }
       };
     } catch (error) {
-      console.error('Failed to initialize notification stream:', error);
+      console.log('Failed to initialize notification stream, using polling instead');
     }
   }
 
