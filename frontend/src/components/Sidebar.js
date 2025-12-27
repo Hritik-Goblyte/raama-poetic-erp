@@ -63,11 +63,7 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
             }}>
               रामा..!
             </h1>
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-sm text-gray-400">Welcome</p>
-                <p className="text-orange-500 font-semibold">@{user?.username || 'Guest'}</p>
-              </div>
+            <div className="flex items-center gap-2">
               <NotificationCenter user={user} />
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -76,6 +72,10 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
             </div>
+          </div>
+          {/* Username section below on mobile */}
+          <div className="mt-2 text-center">
+            <p className="text-sm text-gray-400">Welcome, <span className="text-orange-500 font-semibold">@{user?.username || 'Guest'}</span></p>
           </div>
         </div>
       )}
