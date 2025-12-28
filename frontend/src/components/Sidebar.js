@@ -55,9 +55,9 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
     <>
       {/* Mobile Header */}
       {isMobile && (
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-orange-500/20 px-4 py-3">
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-orange-500/20 px-4 py-2">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold" style={{ 
+            <h1 className="text-xl font-bold" style={{ 
               fontFamily: 'Tillana, cursive',
               color: '#ff6b35'
             }}>
@@ -69,13 +69,9 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="p-2 text-orange-500 hover:bg-orange-500/20 rounded-lg transition-all"
               >
-                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
-          </div>
-          {/* Username section below on mobile */}
-          <div className="mt-2 text-center">
-            <p className="text-sm text-gray-400">Welcome, <span className="text-orange-500 font-semibold">@{user?.username || 'Guest'}</span></p>
           </div>
         </div>
       )}

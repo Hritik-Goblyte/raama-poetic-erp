@@ -80,7 +80,7 @@ export default function Bookmarks({ theme, setTheme }) {
     <div className="flex" style={{ background: 'var(--app-bg)', color: 'var(--app-text)' }}>
       <Sidebar theme={theme} setTheme={setTheme} onNewShayari={() => {}} />
       
-      <div className="lg:ml-64 flex-1 p-4 lg:p-8 min-h-screen pt-20 lg:pt-8 pb-20 lg:pb-8">
+      <div className="lg:ml-64 flex-1 p-4 lg:p-8 min-h-screen pt-16 lg:pt-8 pb-20 lg:pb-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 lg:mb-8 gap-4">
             <div>

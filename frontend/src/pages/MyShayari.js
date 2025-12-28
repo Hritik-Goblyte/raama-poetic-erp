@@ -4,7 +4,7 @@ import ShayariModal from '@/components/ShayariModal';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Heart, Calendar, Edit } from 'lucide-react';
+import { Plus, Trash2, Heart, Calendar, Edit, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
@@ -12,6 +12,7 @@ const API = `${BACKEND_URL}/api`;
 
 export default function MyShayari({ theme, setTheme }) {
   const [shayaris, setShayaris] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showNewShayariModal, setShowNewShayariModal] = useState(false);
   const [newShayari, setNewShayari] = useState({ title: '', content: '' });
   const [selectedShayari, setSelectedShayari] = useState(null);
@@ -25,12 +26,16 @@ export default function MyShayari({ theme, setTheme }) {
 
   const fetchMyShayaris = async () => {
     try {
+      setLoading(true);
       const response = await axios.get(`${API}/shayaris/my`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setShayaris(response.data);
     } catch (error) {
       console.error('Error fetching shayaris:', error);
+      toast.error('Failed to load your shayaris');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,11 +94,18 @@ export default function MyShayari({ theme, setTheme }) {
     setShowShayariModal(true);
   };
 
+  const handleShayariUpdate = (updatedShayari) => {
+    setShayaris(prev => prev.map(s => s.id === updatedShayari.id ? updatedShayari : s));
+    if (selectedShayari?.id === updatedShayari.id) {
+      setSelectedShayari(updatedShayari);
+    }
+  };
+
   return (
     <div className="flex" style={{ background: 'var(--app-bg)', color: 'var(--app-text)' }}>
       <Sidebar theme={theme} setTheme={setTheme} onNewShayari={() => setShowNewShayariModal(true)} />
       
-      <div className="lg:ml-64 flex-1 p-4 lg:p-8 min-h-screen pt-20 lg:pt-8 pb-20 lg:pb-8">
+      <div className="lg:ml-64 flex-1 p-4 lg:p-8 min-h-screen pt-16 lg:pt-8 pb-20 lg:pb-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 lg:mb-8 gap-4">
             <div>
@@ -123,6 +135,13 @@ export default function MyShayari({ theme, setTheme }) {
                 <p className="text-xl text-gray-400">Only writers can create shayaris.</p>
                 <p className="text-orange-500 mt-2">Your role: <span className="font-bold">{user.role}</span></p>
               </div>
+            ) : loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Loader2 size={48} className="animate-spin text-orange-500 mx-auto mb-4" />
+                  <p className="text-gray-400">Loading your shayaris...</p>
+                </div>
+              </div>
             ) : shayaris.length === 0 ? (
               <div className="glass-card p-8 text-center">
                 <p className="text-xl text-gray-400 mb-4">You haven't created any shayaris yet.</p>
@@ -144,16 +163,29 @@ export default function MyShayari({ theme, setTheme }) {
                     onClick={() => handleShayariClick(shayari)}
                   >
                     <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-xl font-bold text-orange-500">{shayari.title}</h3>
-                      <button
-                        data-testid={`delete-shayari-${shayari.id}`}
-                        onClick={(e) => handleDeleteShayari(shayari.id, e)}
-                        className="text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 size={20} />
-                      </button>
+                      <h3 className="text-xl font-bold text-orange-500 flex-1">{shayari.title}</h3>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleShayariClick(shayari);
+                          }}
+                          className="text-gray-400 hover:text-orange-500 transition-colors"
+                          title="Edit Shayari"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button
+                          data-testid={`delete-shayari-${shayari.id}`}
+                          onClick={(e) => handleDeleteShayari(shayari.id, e)}
+                          className="text-gray-400 hover:text-red-500 transition-colors"
+                          title="Delete Shayari"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </div>
-                    <p className="text-gray-300 mb-4" style={{ fontFamily: 'Style Script, cursive', fontSize: '1.1rem' }}>
+                    <p className="text-gray-300 mb-4 line-clamp-2" style={{ fontFamily: 'Style Script, cursive', fontSize: '1.1rem' }}>
                       {shayari.content}
                     </p>
                     <div className="flex items-center justify-between text-sm text-gray-400 pt-4 border-t border-gray-700">
@@ -219,6 +251,7 @@ export default function MyShayari({ theme, setTheme }) {
         shayari={selectedShayari}
         isOpen={showShayariModal}
         onClose={() => setShowShayariModal(false)}
+        onShayariUpdate={handleShayariUpdate}
       />
     </div>
   );

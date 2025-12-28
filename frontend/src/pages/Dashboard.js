@@ -262,7 +262,7 @@ export default function Dashboard({ theme, setTheme }) {
     <div className="flex" style={{ background: 'var(--app-bg)', color: 'var(--app-text)' }}>
       <Sidebar theme={theme} setTheme={setTheme} onNewShayari={() => setShowNewShayariModal(true)} />
       
-      <div className="lg:ml-64 flex-1 p-4 lg:p-8 min-h-screen pt-20 lg:pt-8 pb-20 lg:pb-8">
+      <div className="lg:ml-64 flex-1 p-4 lg:p-8 min-h-screen pt-16 lg:pt-8 pb-20 lg:pb-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8" data-testid="dashboard-header">
             <h1 className="text-5xl font-bold mb-2" style={{ 
@@ -447,63 +447,88 @@ export default function Dashboard({ theme, setTheme }) {
               ) : (
                 // Other tabs (trending, featured) - Regular grid
                 <div className="grid grid-cols-1 gap-4" data-testid="shayaris-list">
-                  {getDisplayShayaris().map((shayari, index) => (
-                  <div 
-                    key={shayari.id} 
-                    className="glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.02]" 
-                    data-testid="shayari-card"
-                    onClick={() => handleShayariClick(shayari)}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-xl font-bold text-orange-500 flex-1">{shayari.title}</h3>
-                      {activeTab === 'trending' && (
-                        <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/20 text-orange-400 rounded-full text-xs ml-2">
-                          <TrendingUp size={12} />
-                          #{index + 1}
-                        </div>
-                      )}
-                      {activeTab === 'featured' && (
-                        <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs ml-2">
-                          <Crown size={12} />
-                          Featured
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-gray-300 mb-4 line-clamp-2" style={{ fontFamily: 'Style Script, cursive', fontSize: '1.1rem' }}>
-                      {shayari.content}
-                    </p>
-                    <div className="flex items-center justify-between text-sm text-gray-400">
-                      <div>
-                        <span className="text-white">{shayari.authorName}</span>
-                        {shayari.authorUsername && (
-                          <span className="text-orange-400 text-xs block">@{shayari.authorUsername}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1">
-                          <Heart size={16} className="text-orange-500" />
-                          {shayari.likes || 0}
-                        </span>
-                        {(activeTab === 'trending' || activeTab === 'featured') && (
+                  {getDisplayShayaris().length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="text-gray-400 mb-4">
+                        {activeTab === 'trending' ? (
                           <>
-                            <span className="flex items-center gap-1">
-                              <Eye size={16} />
-                              {shayari.views || 0}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Share2 size={16} />
-                              {shayari.shares || 0}
-                            </span>
+                            <TrendingUp size={48} className="mx-auto mb-4 opacity-50" />
+                            <p className="text-lg">No trending shayaris found</p>
+                            <p className="text-sm mt-2">Shayaris with high engagement will appear here</p>
+                          </>
+                        ) : activeTab === 'featured' ? (
+                          <>
+                            <Crown size={48} className="mx-auto mb-4 opacity-50" />
+                            <p className="text-lg">No featured shayaris found</p>
+                            <p className="text-sm mt-2">Admin-curated shayaris will appear here</p>
+                          </>
+                        ) : (
+                          <>
+                            <BookOpen size={48} className="mx-auto mb-4 opacity-50" />
+                            <p className="text-lg">No shayaris found</p>
                           </>
                         )}
-                        <span className="flex items-center gap-1">
-                          <Calendar size={16} />
-                          {format(new Date(shayari.createdAt), 'MMM dd')}
-                        </span>
                       </div>
                     </div>
-                  </div>
-                  ))}
+                  ) : (
+                    getDisplayShayaris().map((shayari, index) => (
+                      <div 
+                        key={shayari.id} 
+                        className="glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.02]" 
+                        data-testid="shayari-card"
+                        onClick={() => handleShayariClick(shayari)}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <h3 className="text-xl font-bold text-orange-500 flex-1">{shayari.title}</h3>
+                          {activeTab === 'trending' && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/20 text-orange-400 rounded-full text-xs ml-2">
+                              <TrendingUp size={12} />
+                              #{index + 1}
+                            </div>
+                          )}
+                          {activeTab === 'featured' && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs ml-2">
+                              <Crown size={12} />
+                              Featured
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-gray-300 mb-4 line-clamp-2" style={{ fontFamily: 'Style Script, cursive', fontSize: '1.1rem' }}>
+                          {shayari.content}
+                        </p>
+                        <div className="flex items-center justify-between text-sm text-gray-400">
+                          <div>
+                            <span className="text-white">{shayari.authorName}</span>
+                            {shayari.authorUsername && (
+                              <span className="text-orange-400 text-xs block">@{shayari.authorUsername}</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1">
+                              <Heart size={16} className="text-orange-500" />
+                              {shayari.likes || 0}
+                            </span>
+                            {(activeTab === 'trending' || activeTab === 'featured') && (
+                              <>
+                                <span className="flex items-center gap-1">
+                                  <Eye size={16} />
+                                  {shayari.views || 0}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Share2 size={16} />
+                                  {shayari.shares || 0}
+                                </span>
+                              </>
+                            )}
+                            <span className="flex items-center gap-1">
+                              <Calendar size={16} />
+                              {format(new Date(shayari.createdAt), 'MMM dd')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>

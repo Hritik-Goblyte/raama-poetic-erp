@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import ProfilePicture from '@/components/ProfilePicture';
 import axios from 'axios';
-import { User, Mail, Calendar, BookOpen, Award, Edit, Lock, Send, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Calendar, BookOpen, Award, Edit, Lock, Send, Eye, EyeOff, LogOut } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -11,6 +12,7 @@ const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb
 const API = `${BACKEND_URL}/api`;
 
 export default function Profile({ theme, setTheme }) {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({ myCreations: 0 });
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -102,11 +104,18 @@ export default function Profile({ theme, setTheme }) {
     localStorage.setItem('raama-user', JSON.stringify(updatedUser));
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('raama-token');
+    localStorage.removeItem('raama-user');
+    toast.success('Logged out successfully');
+    navigate('/login');
+  };
+
   return (
     <div className="flex" style={{ background: 'var(--app-bg)', color: 'var(--app-text)' }}>
       <Sidebar theme={theme} setTheme={setTheme} onNewShayari={() => {}} />
       
-      <div className="lg:ml-64 flex-1 p-4 lg:p-8 min-h-screen pt-20 lg:pt-8 pb-20 lg:pb-8">
+      <div className="lg:ml-64 flex-1 p-4 lg:p-8 min-h-screen pt-16 lg:pt-8 pb-20 lg:pb-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl lg:text-5xl font-bold mb-2" style={{ 
@@ -144,6 +153,14 @@ export default function Profile({ theme, setTheme }) {
                   >
                     <Lock size={16} />
                     Change Password
+                  </button>
+                  
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 hover:border-red-500/50 rounded-lg text-red-400 hover:text-red-300 transition-all"
+                  >
+                    <LogOut size={16} />
+                    Logout
                   </button>
                   
                   {user.role === 'reader' && (
