@@ -14,6 +14,8 @@ import Analytics from "@/pages/Analytics";
 import Spotlights from "@/pages/Spotlights";
 import { Toaster } from "@/components/ui/sonner";
 import { ToastContainer } from "@/components/ToastNotification";
+import AppInstallPrompt from "@/components/AppInstallPrompt";
+import OfflineIndicator from "@/components/OfflineIndicator";
 import notificationService from "@/services/notificationService";
 
 function App() {
@@ -59,10 +61,23 @@ function App() {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
           .then((registration) => {
-            // Service worker registered successfully
+            console.log('SW registered: ', registration);
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New content is available, prompt user to refresh
+                  if (confirm('New version available! Refresh to update?')) {
+                    window.location.reload();
+                  }
+                }
+              });
+            });
           })
           .catch((registrationError) => {
-            // Service worker registration failed
+            console.log('SW registration failed: ', registrationError);
           });
       });
     }
@@ -122,6 +137,10 @@ function App() {
           } />
         </Routes>
       </BrowserRouter>
+      
+      {/* App Components */}
+      <AppInstallPrompt />
+      <OfflineIndicator />
       <Toaster />
       <ToastContainer />
     </div>
