@@ -556,6 +556,29 @@ body {
     right: 1rem;
     width: auto;
     max-width: none;
+    transform: none;
+  }
+}
+
+/* Mobile notification dropdown positioning */
+@media (max-width: 768px) {
+  .notification-dropdown {
+    position: fixed;
+    top: 4rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    max-width: none;
+    transform: none;
+    margin: 0;
+  }
+  
+  .notification-bell {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 /* Fix mobile double-tap issues */

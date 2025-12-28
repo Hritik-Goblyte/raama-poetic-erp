@@ -188,8 +188,8 @@ const NotificationCenter = ({ user }) => {
       {isOpen && (
         <div className="notification-dropdown absolute right-0 top-12 w-80 sm:w-80 max-w-[calc(100vw-2rem)] bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 max-h-96 overflow-hidden transform -translate-x-2 sm:translate-x-0">
           {/* Header */}
-          <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white">Notifications</h3>
+          <div className="p-3 sm:p-4 border-b border-gray-700 flex items-center justify-between">
+            <h3 className="text-base sm:text-lg font-semibold text-white">Notifications</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
@@ -203,7 +203,7 @@ const NotificationCenter = ({ user }) => {
                 onClick={() => setIsOpen(false)}
                 className="text-gray-400 hover:text-white"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
           </div>
@@ -211,25 +211,25 @@ const NotificationCenter = ({ user }) => {
           {/* Notifications List */}
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center text-gray-400">
-                <Bell size={48} className="mx-auto mb-4 opacity-50" />
-                <p>No notifications yet</p>
-                <p className="text-sm mt-1">We'll notify you when something happens!</p>
+              <div className="p-6 sm:p-8 text-center text-gray-400">
+                <Bell size={40} className="mx-auto mb-3 opacity-50" />
+                <p className="text-sm sm:text-base">No notifications yet</p>
+                <p className="text-xs sm:text-sm mt-1">We'll notify you when something happens!</p>
               </div>
             ) : (
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`notification-item p-4 border-b border-gray-800 hover:bg-gray-800/50 transition-colors ${
+                  className={`notification-item p-3 sm:p-4 border-b border-gray-800 hover:bg-gray-800/50 transition-colors ${
                     !notification.isRead ? 'bg-orange-500/5 border-l-4 border-l-orange-500' : ''
                   }`}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-2 sm:gap-3">
                     <div className="flex-shrink-0 mt-1">
                       {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${!notification.isRead ? 'text-white font-medium' : 'text-gray-300'}`}>
+                      <p className={`text-xs sm:text-sm ${!notification.isRead ? 'text-white font-medium' : 'text-gray-300'}`}>
                         {getNotificationMessage(notification)}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
@@ -240,16 +240,16 @@ const NotificationCenter = ({ user }) => {
                       {!notification.isRead && (
                         <button
                           onClick={() => markAsRead(notification.id)}
-                          className="text-xs text-orange-500 hover:text-orange-400 px-2 py-1 rounded"
+                          className="text-xs text-orange-500 hover:text-orange-400 px-1 sm:px-2 py-1 rounded"
                         >
-                          Mark read
+                          Read
                         </button>
                       )}
                       <button
                         onClick={() => deleteNotification(notification.id)}
                         className="text-gray-400 hover:text-red-400 p-1"
                       >
-                        <X size={14} />
+                        <X size={12} />
                       </button>
                     </div>
                   </div>
@@ -260,8 +260,8 @@ const NotificationCenter = ({ user }) => {
 
           {/* Footer */}
           {notifications.length > 0 && (
-            <div className="p-3 border-t border-gray-700 text-center">
-              <button className="text-sm text-orange-500 hover:text-orange-400">
+            <div className="p-2 sm:p-3 border-t border-gray-700 text-center">
+              <button className="text-xs sm:text-sm text-orange-500 hover:text-orange-400">
                 View all notifications
               </button>
             </div>

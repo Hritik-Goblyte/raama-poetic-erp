@@ -38,12 +38,20 @@ export default function Writers({ theme, setTheme }) {
       const response = await axios.get(`${API}/users/writers`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setWriters(response.data);
+      
+      // Sort writers to pin current user to top
+      const sortedWriters = response.data.sort((a, b) => {
+        if (a.id === currentUser.id) return -1; // Current user first
+        if (b.id === currentUser.id) return 1;  // Current user first
+        return 0; // Keep original order for others
+      });
+      
+      setWriters(sortedWriters);
       
       // Fetch shayari counts for each writer
       const stats = {};
       await Promise.all(
-        response.data.map(async (writer) => {
+        sortedWriters.map(async (writer) => {
           try {
             const shayariResponse = await axios.get(`${API}/shayaris/author/${writer.id}`, {
               headers: { Authorization: `Bearer ${token}` }
@@ -188,7 +196,9 @@ export default function Writers({ theme, setTheme }) {
                   return (
                     <div 
                       key={writer.id} 
-                      className="glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.02] group" 
+                      className={`glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.02] group ${
+                        isCurrentUser ? 'border-2 border-orange-500/50 bg-gradient-to-br from-orange-500/10 to-orange-600/5' : ''
+                      }`}
                       data-testid="writer-card"
                       onClick={() => handleWriterClick(writer)}
                     >
