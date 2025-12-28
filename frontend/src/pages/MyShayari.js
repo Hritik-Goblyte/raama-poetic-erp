@@ -138,7 +138,7 @@ export default function MyShayari({ theme, setTheme }) {
             ) : loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
-                  <Loader2 size={48} className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
                   <p className="text-gray-400">Loading your shayaris...</p>
                 </div>
               </div>
