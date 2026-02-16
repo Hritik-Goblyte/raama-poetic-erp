@@ -42,8 +42,10 @@ function App() {
         // Initialize notifications
         notificationService.initializeRealTimeNotifications(parsedUser.id);
         
-        // Request notification permission and setup push notifications
-        notificationService.requestNotificationPermission();
+        // Request notification permission after a delay (better UX)
+        setTimeout(() => {
+          notificationService.requestNotificationPermission();
+        }, 10000); // Wait 10 seconds before asking for permission
       } catch (error) {
         console.error('Error parsing user data:', error);
       }

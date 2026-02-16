@@ -191,16 +191,17 @@ export default function Writers({ theme, setTheme }) {
                   <p className="text-xl text-gray-400">No writers found.</p>
                 </div>
               ) : (
-                writers.map((writer) => {
+                writers.map((writer, index) => {
                   const isCurrentUser = currentUser.id === writer.id;
                   return (
                     <div 
                       key={writer.id} 
-                      className={`glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.02] group ${
+                      className={`glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.02] group slide-in-up ${
                         isCurrentUser ? 'border-2 border-orange-500/50 bg-gradient-to-br from-orange-500/10 to-orange-600/5' : ''
                       }`}
                       data-testid="writer-card"
                       onClick={() => handleWriterClick(writer)}
+                      style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div className="flex items-start gap-4 mb-4">
                         <div onClick={(e) => writer.profilePicture && handleProfilePictureClick(e, writer.profilePicture, `${writer.firstName} ${writer.lastName}`)}>
@@ -285,10 +286,11 @@ export default function Writers({ theme, setTheme }) {
                   <p className="text-gray-500">Check back later for featured writers and their exceptional works!</p>
                 </div>
               ) : (
-                spotlights.map((spotlight) => (
+                spotlights.map((spotlight, index) => (
                   <div 
                     key={spotlight.id} 
-                    className="glass-card p-6 lg:p-8 border-2 border-yellow-500/30 bg-gradient-to-br from-yellow-500/5 to-orange-500/5"
+                    className="glass-card p-6 lg:p-8 border-2 border-yellow-500/30 bg-gradient-to-br from-yellow-500/5 to-orange-500/5 slide-in-up"
+                    style={{ animationDelay: `${index * 200}ms` }}
                   >
                     {/* Spotlight Header */}
                     <div className="flex items-start justify-between mb-6">

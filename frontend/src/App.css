@@ -802,3 +802,521 @@ body {
     transform: none;
   }
 }
+
+/* Smooth Loading Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+@keyframes countUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 107, 53, 0.6);
+  }
+}
+
+/* Loading animations */
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 0.5s ease-out forwards;
+}
+
+.animate-count-up {
+  animation: countUp 0.4s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Skeleton loading animations */
+.skeleton {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.05) 25%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Staggered animation delays */
+.animate-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.animate-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animate-delay-300 {
+  animation-delay: 0.3s;
+}
+
+.animate-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.animate-delay-500 {
+  animation-delay: 0.5s;
+}
+
+/* Enhanced loading spinner */
+@keyframes spinGlow {
+  0% {
+    transform: rotate(0deg);
+    box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.6);
+  }
+  100% {
+    transform: rotate(360deg);
+    box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+  }
+}
+
+.loading-spinner-glow {
+  animation: spinGlow 1s linear infinite;
+}
+
+/* Smooth transitions for content appearance */
+.content-appear {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.content-appear-delay-1 {
+  animation-delay: 0.1s;
+}
+
+.content-appear-delay-2 {
+  animation-delay: 0.2s;
+}
+
+.content-appear-delay-3 {
+  animation-delay: 0.3s;
+}
+
+/* Number counting animation */
+.counting-number {
+  display: inline-block;
+  animation: countUp 0.8s ease-out forwards;
+}
+
+/* Loading state improvements */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  backdrop-filter: blur(2px);
+}
+
+/* Smooth card loading */
+.card-loading {
+  opacity: 0.7;
+  pointer-events: none;
+  position: relative;
+}
+
+.card-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+    transparent 25%, 
+    rgba(255, 255, 255, 0.05) 50%, 
+    transparent 75%
+  );
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: inherit;
+}
+
+/* Enhanced main loading screen */
+.main-loading-screen {
+  background: radial-gradient(circle at center, 
+    rgba(255, 107, 53, 0.1) 0%, 
+    rgba(0, 0, 0, 0.9) 70%
+  );
+}
+
+.main-loading-spinner {
+  position: relative;
+}
+
+.main-loading-spinner::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px solid transparent;
+  border-top: 2px solid rgba(255, 107, 53, 0.3);
+  border-radius: 50%;
+  animation: spin 2s linear infinite reverse;
+}
+
+/* Responsive loading improvements */
+@media (max-width: 768px) {
+  .animate-fade-in-up {
+    animation-duration: 0.4s;
+  }
+  
+  .skeleton {
+    animation-duration: 1.2s;
+  }
+  
+  .main-loading-screen h1 {
+    font-size: 2.5rem;
+  }
+  
+  .main-loading-screen p {
+    font-size: 1rem;
+  }
+}
+/* Instagram-style Mobile Navigation */
+@media (max-width: 1024px) {
+  /* Mobile header improvements */
+  .mobile-header {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(0, 0, 0, 0.95);
+    border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+  }
+  
+  /* Instagram-style bottom navigation */
+  .mobile-bottom-nav {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(0, 0, 0, 0.95);
+    border-top: 1px solid rgba(128, 128, 128, 0.2);
+  }
+  
+  /* Better touch targets for mobile nav */
+  .mobile-nav-item {
+    min-height: 48px;
+    min-width: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Instagram-style create button */
+  .mobile-create-btn {
+    background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+  }
+  
+  /* Mobile menu dropdown */
+  .mobile-menu-dropdown {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(31, 41, 55, 0.95);
+    border: 1px solid rgba(75, 85, 99, 0.5);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+  }
+  
+  /* Smooth animations for mobile */
+  .mobile-nav-transition {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Active state for mobile nav items */
+  .mobile-nav-active {
+    color: #ff6b35;
+    transform: scale(1.05);
+  }
+  
+  /* Hover effects for mobile (for devices that support it) */
+  @media (hover: hover) {
+    .mobile-nav-item:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+    }
+  }
+}
+
+/* Safe area padding for devices with notches */
+@supports (padding: max(0px)) {
+  .mobile-header {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+  
+  .mobile-bottom-nav {
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Prevent zoom on mobile inputs */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+    transform-origin: left top;
+  }
+}
+
+/* Better mobile scrolling */
+@media (max-width: 1024px) {
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Hide scrollbars on mobile for cleaner look */
+  ::-webkit-scrollbar {
+    width: 2px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 53, 0.3);
+    border-radius: 1px;
+  }
+}
+
+/* Instagram-style profile avatar */
+.profile-avatar {
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  border: 2px solid rgba(255, 107, 53, 0.3);
+}
+
+/* Mobile-first responsive improvements */
+@media (max-width: 640px) {
+  /* Smaller text on very small screens */
+  .mobile-nav-item span {
+    font-size: 10px;
+    font-weight: 500;
+  }
+  
+  /* Adjust icon sizes for small screens */
+  .mobile-nav-item svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Compact mobile header */
+  .mobile-header h1 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Dark mode specific mobile improvements */
+.dark .mobile-header,
+.dark .mobile-bottom-nav {
+  background: rgba(0, 0, 0, 0.95);
+  border-color: rgba(75, 85, 99, 0.3);
+}
+
+.dark .mobile-menu-dropdown {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: rgba(75, 85, 99, 0.5);
+}
+
+/* Light mode mobile navigation (if needed) */
+.light .mobile-header,
+.light .mobile-bottom-nav {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(229, 231, 235, 0.8);
+  color: #1f2937;
+}
+
+.light .mobile-menu-dropdown {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(229, 231, 235, 0.8);
+  color: #1f2937;
+}
+/* Slide-in Animations */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide-in animation classes */
+.slide-in-left {
+  animation: slideInLeft 0.6s ease-out forwards;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.6s ease-out forwards;
+}
+
+.slide-in-up {
+  animation: slideInUp 0.6s ease-out forwards;
+}
+
+.slide-in-down {
+  animation: slideInDown 0.6s ease-out forwards;
+}
+
+/* Initial state for slide-in elements */
+.slide-in-left,
+.slide-in-right,
+.slide-in-up,
+.slide-in-down {
+  opacity: 0;
+}
+
+/* Staggered slide-in delays */
+.slide-in-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.slide-in-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.slide-in-delay-300 {
+  animation-delay: 0.3s;
+}
+
+.slide-in-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.slide-in-delay-500 {
+  animation-delay: 0.5s;
+}
+
+/* Responsive slide-in animations */
+@media (max-width: 768px) {
+  .slide-in-left,
+  .slide-in-right,
+  .slide-in-up,
+  .slide-in-down {
+    animation-duration: 0.4s;
+  }
+  
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

@@ -59,8 +59,8 @@ export default function Analytics({ theme, setTheme }) {
     }
   };
 
-  const StatCard = ({ title, value, icon: Icon, color, subtitle, trend }) => (
-    <div className="glass-card p-6 hover:border-orange-500/50 transition-all">
+  const StatCard = ({ title, value, icon: Icon, color, subtitle, trend, index = 0 }) => (
+    <div className="glass-card p-6 hover:border-orange-500/50 transition-all slide-in-up" style={{ animationDelay: `${index * 100}ms` }}>
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-gray-400 text-sm">{title}</p>
@@ -123,6 +123,7 @@ export default function Analytics({ theme, setTheme }) {
                   icon={BookOpen}
                   color="text-blue-500"
                   subtitle="Published works"
+                  index={0}
                 />
                 <StatCard
                   title="Total Likes"
@@ -130,6 +131,7 @@ export default function Analytics({ theme, setTheme }) {
                   icon={Heart}
                   color="text-red-500"
                   subtitle="Appreciation received"
+                  index={1}
                 />
                 <StatCard
                   title="Total Views"
@@ -137,6 +139,7 @@ export default function Analytics({ theme, setTheme }) {
                   icon={Eye}
                   color="text-green-500"
                   subtitle="Times read"
+                  index={2}
                 />
                 <StatCard
                   title="Followers"
@@ -144,12 +147,13 @@ export default function Analytics({ theme, setTheme }) {
                   icon={Users}
                   color="text-purple-500"
                   subtitle="People following you"
+                  index={3}
                 />
               </div>
 
               {/* Performance Metrics */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div className="glass-card p-6">
+                <div className="glass-card p-6 slide-in-left" style={{ animationDelay: '400ms' }}>
                   <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                     <Award className="text-orange-500" />
                     Engagement Metrics
@@ -189,7 +193,7 @@ export default function Analytics({ theme, setTheme }) {
                   </div>
                 </div>
 
-                <div className="glass-card p-6">
+                <div className="glass-card p-6 slide-in-right" style={{ animationDelay: '500ms' }}>
                   <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                     <Activity className="text-orange-500" />
                     Recent Activity
@@ -260,6 +264,7 @@ export default function Analytics({ theme, setTheme }) {
                   icon={Eye}
                   color="text-green-500"
                   subtitle="Total views"
+                  index={0}
                 />
                 <StatCard
                   title="Likes Given"
@@ -267,6 +272,7 @@ export default function Analytics({ theme, setTheme }) {
                   icon={Heart}
                   color="text-red-500"
                   subtitle="Appreciation shared"
+                  index={1}
                 />
                 <StatCard
                   title="Shares Made"
@@ -274,6 +280,7 @@ export default function Analytics({ theme, setTheme }) {
                   icon={Share2}
                   color="text-blue-500"
                   subtitle="Content shared"
+                  index={2}
                 />
                 <StatCard
                   title="Following"
@@ -281,6 +288,7 @@ export default function Analytics({ theme, setTheme }) {
                   icon={Users}
                   color="text-purple-500"
                   subtitle="Writers you follow"
+                  index={3}
                 />
               </div>
 

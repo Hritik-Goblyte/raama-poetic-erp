@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import ShayariModal from '@/components/ShayariModal';
+import CountingAnimation from '@/components/CountingAnimation';
+import LoadingScreen from '@/components/LoadingScreen';
+import { StatCardSkeleton, ShayariCardSkeleton, NotificationSkeleton } from '@/components/SkeletonLoader';
 import api from '@/utils/axiosConfig';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -27,17 +30,154 @@ export default function Dashboard({ theme, setTheme }) {
   const [activeTab, setActiveTab] = useState('recent');
   const [loading, setLoading] = useState(false);
   
+  // Loading states for different sections
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [isShayarisLoading, setIsShayarisLoading] = useState(true);
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(true);
+  
   // Safe user and token retrieval
   const user = getUserFromStorage();
   const token = getTokenFromStorage();
 
-  // Redirect to login if no user or token
-  useEffect(() => {
-    if (!user || !token) {
-      navigate('/login');
-      return;
+  // Check if dashboard data is cached and still valid
+  const getDashboardCacheKey = () => `dashboard-cache-${user?.id || 'guest'}`;
+  const getCachedDashboardData = () => {
+    try {
+      const cached = sessionStorage.getItem(getDashboardCacheKey());
+      if (cached) {
+        const data = JSON.parse(cached);
+        // Check if cache is less than 5 minutes old
+        const cacheAge = Date.now() - data.timestamp;
+        if (cacheAge < 5 * 60 * 1000) { // 5 minutes
+          return data;
+        }
+      }
+    } catch (error) {
+      console.error('Error reading dashboard cache:', error);
     }
-  }, [user, token, navigate]);
+    return null;
+  };
+
+  const setCachedDashboardData = (data) => {
+    try {
+      const cacheData = {
+        ...data,
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem(getDashboardCacheKey(), JSON.stringify(cacheData));
+    } catch (error) {
+      console.error('Error setting dashboard cache:', error);
+    }
+  };
+
+  const clearDashboardCache = () => {
+    try {
+      sessionStorage.removeItem(getDashboardCacheKey());
+      console.log('🗑️ Dashboard cache cleared');
+    } catch (error) {
+      console.error('Error clearing dashboard cache:', error);
+    }
+  };
+
+  // Simple useEffect to load data once
+  useEffect(() => {
+    const initializeData = async () => {
+      // Check for cached data first
+      const cachedData = getCachedDashboardData();
+      
+      if (cachedData) {
+        console.log('📦 Using cached dashboard data');
+        
+        // Load from cache immediately
+        setStats(cachedData.stats || { myCreations: 0, totalShayaris: 0, totalWriters: 0, unreadNotifications: 0 });
+        setRecentShayaris(cachedData.recentShayaris || []);
+        setAllShayaris(cachedData.allShayaris || []);
+        setTrendingShayaris(cachedData.trendingShayaris || []);
+        setFeaturedShayaris(cachedData.featuredShayaris || []);
+        setNotifications(cachedData.notifications || []);
+        
+        // Set loading states to false immediately
+        setIsStatsLoading(false);
+        setIsShayarisLoading(false);
+        setIsNotificationsLoading(false);
+        setIsInitialLoading(false);
+        
+        return; // Exit early, don't fetch from API
+      }
+
+      // No cache found, proceed with API loading
+      console.log('🚀 Loading dashboard data from API...');
+      
+      // Wait a bit for user/token to be available
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const currentUser = getUserFromStorage();
+      const currentToken = getTokenFromStorage();
+      
+      if (!currentUser || !currentToken) {
+        navigate('/login');
+        return;
+      }
+
+      // Load real production data
+      const loadData = async () => {
+        try {
+          // Make real API calls to production backend
+          const [statsRes, notifsRes, shayarisRes, trendingRes, featuredRes] = await Promise.all([
+            api.get(`${API}/stats`, { headers: { Authorization: `Bearer ${currentToken}` } }),
+            api.get(`${API}/notifications`, { headers: { Authorization: `Bearer ${currentToken}` } }),
+            api.get(`${API}/shayaris`, { headers: { Authorization: `Bearer ${currentToken}` } }),
+            api.get(`${API}/shayaris/trending`, { headers: { Authorization: `Bearer ${currentToken}` } }).catch(() => ({ data: [] })),
+            api.get(`${API}/shayaris/featured`, { headers: { Authorization: `Bearer ${currentToken}` } }).catch(() => ({ data: [] }))
+          ]);
+          
+          console.log('✅ Data loaded successfully from API');
+          
+          // Prepare data for state and cache
+          const dashboardData = {
+            stats: statsRes.data,
+            recentShayaris: shayarisRes.data.slice(0, 2),
+            allShayaris: shayarisRes.data,
+            trendingShayaris: trendingRes.data.slice(0, 6),
+            featuredShayaris: featuredRes.data.slice(0, 6),
+            notifications: notifsRes.data.notifications?.slice(0, 5) || []
+          };
+          
+          // Set state
+          setStats(dashboardData.stats);
+          setRecentShayaris(dashboardData.recentShayaris);
+          setAllShayaris(dashboardData.allShayaris);
+          setTrendingShayaris(dashboardData.trendingShayaris);
+          setFeaturedShayaris(dashboardData.featuredShayaris);
+          setNotifications(dashboardData.notifications);
+          
+          // Cache the data
+          setCachedDashboardData(dashboardData);
+          
+          // Set loading states to false with stagger for smooth animations
+          setTimeout(() => setIsStatsLoading(false), 100);
+          setTimeout(() => setIsShayarisLoading(false), 200);
+          setTimeout(() => setIsNotificationsLoading(false), 300);
+          setTimeout(() => setIsInitialLoading(false), 400);
+          
+        } catch (error) {
+          console.error('❌ Error loading data:', error);
+          toast.error('Failed to load dashboard data');
+          
+          // Set loading states to false even on error
+          setIsInitialLoading(false);
+          setIsStatsLoading(false);
+          setIsShayarisLoading(false);
+          setIsNotificationsLoading(false);
+        }
+      };
+
+      await loadData();
+    };
+
+    initializeData();
+  }, [navigate]); // Remove hasInitialized from dependencies
 
   // Don't render if no user (will redirect)
   if (!user || !token) {
@@ -51,66 +191,62 @@ export default function Dashboard({ theme, setTheme }) {
     );
   }
 
-  useEffect(() => {
-    fetchData();
-    
-    // Initialize notification service
-    const initNotificationService = async () => {
-      try {
-        const notificationService = (await import('@/services/notificationService')).default;
-        
-        // Initialize real-time notifications
-        notificationService.initializeRealTimeNotifications(user.id);
-        
-        // Request notification permission
-        await notificationService.requestNotificationPermission();
-        
-        console.log('Notification service initialized');
-      } catch (error) {
-        console.error('Failed to initialize notification service:', error);
-      }
-    };
-    
-    if (user?.id) {
-      initNotificationService();
-    }
-    
-    // Cleanup on unmount
-    return () => {
-      import('@/services/notificationService').then(({ default: notificationService }) => {
-        notificationService.disconnect();
-      }).catch(console.error);
-    };
-  }, [user?.id]);
+  // Show main loading screen during initial load (only if no cached data)
+  if (isInitialLoading) {
+    return <LoadingScreen stage="loading" message="Loading your poetry world" />;
+  }
 
-  const fetchData = async () => {
+  // Function to refresh dashboard data manually
+  const refreshDashboardData = async () => {
+    console.log('🔄 Refreshing dashboard data...');
+    
+    setIsStatsLoading(true);
+    setIsShayarisLoading(true);
+    setIsNotificationsLoading(true);
+    
     try {
-      console.log('Fetching dashboard data...');
+      const currentToken = getTokenFromStorage();
+      
+      // Make real API calls to production backend
       const [statsRes, notifsRes, shayarisRes, trendingRes, featuredRes] = await Promise.all([
-        api.get(`${API}/stats`, { headers: { Authorization: `Bearer ${token}` } }),
-        api.get(`${API}/notifications`, { headers: { Authorization: `Bearer ${token}` } }),
-        api.get(`${API}/shayaris`, { headers: { Authorization: `Bearer ${token}` } }),
-        api.get(`${API}/shayaris/trending`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
-        api.get(`${API}/shayaris/featured`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] }))
+        api.get(`${API}/stats`, { headers: { Authorization: `Bearer ${currentToken}` } }),
+        api.get(`${API}/notifications`, { headers: { Authorization: `Bearer ${currentToken}` } }),
+        api.get(`${API}/shayaris`, { headers: { Authorization: `Bearer ${currentToken}` } }),
+        api.get(`${API}/shayaris/trending`, { headers: { Authorization: `Bearer ${currentToken}` } }).catch(() => ({ data: [] })),
+        api.get(`${API}/shayaris/featured`, { headers: { Authorization: `Bearer ${currentToken}` } }).catch(() => ({ data: [] }))
       ]);
       
-      console.log('Stats response:', statsRes.data);
-      console.log('Notifications response:', notifsRes.data);
-      console.log('Shayaris response:', shayarisRes.data);
-      console.log('Trending response:', trendingRes.data);
-      console.log('Featured response:', featuredRes.data);
+      // Prepare data for state and cache
+      const dashboardData = {
+        stats: statsRes.data,
+        recentShayaris: shayarisRes.data.slice(0, 2),
+        allShayaris: shayarisRes.data,
+        trendingShayaris: trendingRes.data.slice(0, 6),
+        featuredShayaris: featuredRes.data.slice(0, 6),
+        notifications: notifsRes.data.notifications?.slice(0, 5) || []
+      };
       
-      setStats(statsRes.data);
-      setNotifications(notifsRes.data.notifications?.slice(0, 5) || []);
-      setRecentShayaris(shayarisRes.data.slice(0, 2)); // Only 2 latest shayaris for recent section
-      setAllShayaris(shayarisRes.data); // All shayaris without limit
-      setTrendingShayaris(trendingRes.data.slice(0, 6));
-      setFeaturedShayaris(featuredRes.data.slice(0, 6));
+      // Set state
+      setStats(dashboardData.stats);
+      setRecentShayaris(dashboardData.recentShayaris);
+      setAllShayaris(dashboardData.allShayaris);
+      setTrendingShayaris(dashboardData.trendingShayaris);
+      setFeaturedShayaris(dashboardData.featuredShayaris);
+      setNotifications(dashboardData.notifications);
       
-      console.log('Recent shayaris set:', shayarisRes.data.slice(0, 2));
+      // Update cache
+      setCachedDashboardData(dashboardData);
+      
+      console.log('✅ Dashboard data refreshed successfully');
+      
     } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Failed to load dashboard data');
+      console.error('❌ Error refreshing data:', error);
+      toast.error('Failed to refresh dashboard data');
+    } finally {
+      // Set loading states to false
+      setIsStatsLoading(false);
+      setIsShayarisLoading(false);
+      setIsNotificationsLoading(false);
     }
   };
 
@@ -119,12 +255,27 @@ export default function Dashboard({ theme, setTheme }) {
     
     setLoading(true);
     try {
+      // Add minimum loading time for smooth UX
+      const minLoadingTime = 500;
+      const startTime = Date.now();
+      
       const response = await api.get(`${API}/shayaris`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      // Calculate remaining time to meet minimum loading duration
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+      
+      // Wait for remaining time if needed
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+      
       setAllShayaris(response.data);
     } catch (error) {
       console.error('Error fetching all shayaris:', error);
+      toast.error('Failed to load all shayaris');
     } finally {
       setLoading(false);
     }
@@ -159,7 +310,7 @@ export default function Dashboard({ theme, setTheme }) {
       
       setShowNewShayariModal(false);
       setNewShayari({ title: '', content: '' });
-      fetchData();
+      refreshDashboardData(); // Use the refresh function instead of fetchData
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create shayari');
     }
@@ -277,19 +428,32 @@ export default function Dashboard({ theme, setTheme }) {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
-            <div className="glass-card p-6" data-testid="stat-my-creations">
-              <h3 className="text-gray-400 mb-2">My Creations</h3>
-              <p className="text-4xl font-bold text-orange-500">{stats.myCreations}</p>
+          <div className="mb-6 lg:mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 max-w-lg">
+              {isStatsLoading ? (
+                <>
+                  <div className="animate-delay-100"><StatCardSkeleton /></div>
+                  <div className="animate-delay-200"><StatCardSkeleton /></div>
+                </>
+              ) : (
+                <>
+                  <div className="glass-card p-4 lg:p-6 slide-in-left animate-delay-100" data-testid="stat-my-creations">
+                    <h3 className="text-gray-400 mb-2 text-sm lg:text-base">My Creations</h3>
+                    <p className="text-3xl lg:text-4xl font-bold text-orange-500">
+                      <CountingAnimation 
+                        targetValue={stats.myCreations} 
+                        duration={1200}
+                        isLoading={isStatsLoading}
+                      />
+                    </p>
+                  </div>
+                  <div className="glass-card p-4 lg:p-6 slide-in-left animate-delay-200" data-testid="stat-username">
+                    <h3 className="text-gray-400 mb-2 text-sm lg:text-base">Username</h3>
+                    <p className="text-xl lg:text-2xl font-bold">@{user?.username || 'N/A'}</p>
+                  </div>
+                </>
+              )}
             </div>
-            <div className="glass-card p-6" data-testid="stat-username">
-              <h3 className="text-gray-400 mb-2">Username</h3>
-              <p className="text-2xl font-bold">@{user?.username || 'N/A'}</p>
-            </div>
-            {/* <div className="glass-card p-6" data-testid="stat-total-shayaris">
-              <h3 className="text-gray-400 mb-2">Total Shayaris</h3>
-              <p className="text-4xl font-bold text-orange-500">{stats.totalShayaris}</p>
-            </div> */}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
@@ -350,6 +514,12 @@ export default function Dashboard({ theme, setTheme }) {
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
                 </div>
+              ) : isShayarisLoading && activeTab === 'recent' ? (
+                // Loading skeletons for recent shayaris
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="recent-shayaris-grid">
+                  <div className="animate-delay-100"><ShayariCardSkeleton /></div>
+                  <div className="animate-delay-200"><ShayariCardSkeleton /></div>
+                </div>
               ) : activeTab === 'recent' ? (
                 // Recent Shayaris - 2 cards side by side
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="recent-shayaris-grid">
@@ -365,7 +535,7 @@ export default function Dashboard({ theme, setTheme }) {
                     getDisplayShayaris().map((shayari, index) => (
                       <div 
                         key={shayari.id} 
-                        className="glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.02]" 
+                        className={`glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.02] slide-in-up animate-delay-${(index + 1) * 100}`}
                         data-testid="shayari-card"
                         onClick={() => handleShayariClick(shayari)}
                       >
@@ -385,7 +555,11 @@ export default function Dashboard({ theme, setTheme }) {
                           <div className="flex items-center gap-3">
                             <span className="flex items-center gap-1">
                               <Heart size={16} className="text-orange-500" />
-                              {shayari.likes || 0}
+                              <CountingAnimation 
+                                targetValue={shayari.likes || 0} 
+                                duration={800}
+                                isLoading={isShayarisLoading}
+                              />
                             </span>
                             <span className="flex items-center gap-1">
                               <Calendar size={16} />
@@ -432,7 +606,11 @@ export default function Dashboard({ theme, setTheme }) {
                           <div className="flex items-center gap-2">
                             <span className="flex items-center gap-1">
                               <Heart size={14} className="text-orange-500" />
-                              {shayari.likes || 0}
+                              <CountingAnimation 
+                                targetValue={shayari.likes || 0} 
+                                duration={600}
+                                isLoading={isShayarisLoading}
+                              />
                             </span>
                             <span className="flex items-center gap-1">
                               <Calendar size={14} />
@@ -443,6 +621,13 @@ export default function Dashboard({ theme, setTheme }) {
                       </div>
                     ))}
                   </div>
+                </div>
+              ) : isShayarisLoading && (activeTab === 'trending' || activeTab === 'featured') ? (
+                // Loading skeletons for other tabs
+                <div className="grid grid-cols-1 gap-4" data-testid="shayaris-list">
+                  <div className="animate-delay-100"><ShayariCardSkeleton /></div>
+                  <div className="animate-delay-200"><ShayariCardSkeleton /></div>
+                  <div className="animate-delay-300"><ShayariCardSkeleton /></div>
                 </div>
               ) : (
                 // Other tabs (trending, featured) - Regular grid
@@ -474,9 +659,10 @@ export default function Dashboard({ theme, setTheme }) {
                     getDisplayShayaris().map((shayari, index) => (
                       <div 
                         key={shayari.id} 
-                        className="glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.02]" 
+                        className="glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.02] slide-in-up" 
                         data-testid="shayari-card"
                         onClick={() => handleShayariClick(shayari)}
+                        style={{ animationDelay: `${index * 100}ms` }}
                       >
                         <div className="flex items-start justify-between mb-3">
                           <h3 className="text-xl font-bold text-orange-500 flex-1">{shayari.title}</h3>
@@ -506,17 +692,29 @@ export default function Dashboard({ theme, setTheme }) {
                           <div className="flex items-center gap-3">
                             <span className="flex items-center gap-1">
                               <Heart size={16} className="text-orange-500" />
-                              {shayari.likes || 0}
+                              <CountingAnimation 
+                                targetValue={shayari.likes || 0} 
+                                duration={800}
+                                isLoading={isShayarisLoading}
+                              />
                             </span>
                             {(activeTab === 'trending' || activeTab === 'featured') && (
                               <>
                                 <span className="flex items-center gap-1">
                                   <Eye size={16} />
-                                  {shayari.views || 0}
+                                  <CountingAnimation 
+                                    targetValue={shayari.views || 0} 
+                                    duration={900}
+                                    isLoading={isShayarisLoading}
+                                  />
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Share2 size={16} />
-                                  {shayari.shares || 0}
+                                  <CountingAnimation 
+                                    targetValue={shayari.shares || 0} 
+                                    duration={700}
+                                    isLoading={isShayarisLoading}
+                                  />
                                 </span>
                               </>
                             )}
@@ -536,7 +734,13 @@ export default function Dashboard({ theme, setTheme }) {
             <div className="lg:mt-0 mt-6">
               <h2 className="text-2xl lg:text-3xl font-bold mb-4" style={{ fontFamily: 'Macondo, cursive' }}>Notifications</h2>
               <div className="space-y-3" data-testid="notifications-panel">
-                {notifications.length === 0 ? (
+                {isNotificationsLoading ? (
+                  <>
+                    <div className="animate-delay-100"><NotificationSkeleton /></div>
+                    <div className="animate-delay-200"><NotificationSkeleton /></div>
+                    <div className="animate-delay-300"><NotificationSkeleton /></div>
+                  </>
+                ) : notifications.length === 0 ? (
                   <div className="glass-card p-4 text-center text-gray-400">
                     No notifications
                   </div>

@@ -185,12 +185,12 @@ class NotificationService {
   // Request notification permission and setup push notifications
   async requestNotificationPermission() {
     if (!('Notification' in window)) {
-      console.log('This browser does not support notifications');
+      console.log('❌ This browser does not support notifications');
       return false;
     }
 
     if (!('serviceWorker' in navigator)) {
-      console.log('This browser does not support service workers');
+      console.log('❌ This browser does not support service workers');
       return false;
     }
 
@@ -198,21 +198,115 @@ class NotificationService {
       // Request notification permission
       let permission = Notification.permission;
       if (permission === 'default') {
+        // Show a friendly prompt first
+        const userWantsNotifications = await this.showNotificationPrompt();
+        if (!userWantsNotifications) {
+          return false;
+        }
+        
         permission = await Notification.requestPermission();
       }
 
       if (permission === 'granted') {
+        console.log('✅ Notification permission granted');
         // Setup push subscription
         await this.setupPushSubscription();
+        
+        // Show a test notification to confirm it's working
+        this.showWelcomeNotification();
+        
         return true;
       } else {
-        console.log('Notification permission denied');
+        console.log('❌ Notification permission denied');
         return false;
       }
     } catch (error) {
-      console.error('Error requesting notification permission:', error);
+      console.error('❌ Error requesting notification permission:', error);
       return false;
     }
+  }
+
+  // Show a friendly notification prompt
+  async showNotificationPrompt() {
+    return new Promise((resolve) => {
+      // Create a custom modal-like prompt
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="bg-gray-900 border border-orange-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+          <div class="text-center mb-6">
+            <div class="text-4xl mb-4">🔔</div>
+            <h3 class="text-xl font-bold text-orange-500 mb-2" style="font-family: 'Tillana', cursive;">
+              Stay Connected with रामा
+            </h3>
+            <p class="text-gray-300 text-sm leading-relaxed">
+              Get instant notifications when someone likes your shayaris, follows you, or when your work gets featured!
+            </p>
+          </div>
+          
+          <div class="space-y-3">
+            <button id="allow-notifications" class="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-all">
+              ✨ Enable Notifications
+            </button>
+            <button id="maybe-later" class="w-full py-2 text-gray-400 hover:text-white transition-all">
+              Maybe Later
+            </button>
+          </div>
+          
+          <div class="mt-4 text-xs text-gray-500 text-center">
+            <p>📱 Works like Instagram, YouTube notifications</p>
+            <p>🔒 You can change this anytime in settings</p>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Handle button clicks
+      modal.querySelector('#allow-notifications').onclick = () => {
+        document.body.removeChild(modal);
+        resolve(true);
+      };
+      
+      modal.querySelector('#maybe-later').onclick = () => {
+        document.body.removeChild(modal);
+        resolve(false);
+      };
+      
+      // Close on backdrop click
+      modal.onclick = (e) => {
+        if (e.target === modal) {
+          document.body.removeChild(modal);
+          resolve(false);
+        }
+      };
+    });
+  }
+
+  // Show welcome notification after permission is granted
+  showWelcomeNotification() {
+    setTimeout(() => {
+      if (Notification.permission === 'granted') {
+        const notification = new Notification('🎉 रामा Notifications Enabled!', {
+          body: 'You\'ll now receive notifications for likes, follows, and featured content.',
+          icon: '/favicon.ico',
+          badge: '/favicon.ico',
+          tag: 'welcome',
+          requireInteraction: false,
+          silent: false
+        });
+
+        // Auto close after 5 seconds
+        setTimeout(() => {
+          notification.close();
+        }, 5000);
+
+        notification.onclick = () => {
+          window.focus();
+          notification.close();
+        };
+      }
+    }, 1000);
   }
 
   // Setup push subscription
@@ -236,10 +330,10 @@ class NotificationService {
       // Send subscription to server
       await this.sendSubscriptionToServer(subscription);
       
-      console.log('Push subscription setup complete');
+      console.log('✅ Push subscription setup complete');
       return subscription;
     } catch (error) {
-      console.error('Error setting up push subscription:', error);
+      console.error('❌ Error setting up push subscription:', error);
       return null;
     }
   }

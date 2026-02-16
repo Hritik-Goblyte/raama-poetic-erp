@@ -27,6 +27,18 @@ export const setTokenInStorage = (token) => {
 };
 
 export const clearStorage = () => {
+  // Clear dashboard cache for all users
+  try {
+    const keys = Object.keys(sessionStorage);
+    keys.forEach(key => {
+      if (key.startsWith('dashboard-cache-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  } catch (error) {
+    console.error('Error clearing dashboard cache:', error);
+  }
+  
   localStorage.removeItem('raama-user');
   localStorage.removeItem('raama-token');
 };

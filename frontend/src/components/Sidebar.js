@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, BookOpen, Users, User, LogOut, Moon, Sun, Plus, Menu, X, Edit, BarChart3 } from 'lucide-react';
+import { Home, BookOpen, Users, User, LogOut, Moon, Sun, Plus, Menu, X, Edit, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState, useEffect } from 'react';
@@ -23,6 +23,18 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
   }, []);
 
   const handleLogout = () => {
+    // Clear dashboard cache for all users
+    try {
+      const keys = Object.keys(sessionStorage);
+      keys.forEach(key => {
+        if (key.startsWith('dashboard-cache-')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    } catch (error) {
+      console.error('Error clearing dashboard cache:', error);
+    }
+    
     localStorage.removeItem('raama-token');
     localStorage.removeItem('raama-user');
     toast.success('Logged out successfully');
@@ -43,78 +55,92 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
   };
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Dashboard' },
-    { path: '/bookmarks', icon: BookOpen, label: 'Bookmarks' },
-    { path: '/my-shayari', icon: Edit, label: 'My Shayari' },
-    { path: '/writers', icon: Users, label: 'Writers' },
-    { path: '/analytics', icon: BarChart3, label: 'Analytics' },
-    { path: '/profile', icon: User, label: 'Profile' }
+    { path: '/', icon: Home, label: 'Dashboard', mobileLabel: 'Home' },
+    { path: '/bookmarks', icon: BookOpen, label: 'Bookmarks', mobileLabel: 'Saved' },
+    { path: '/my-shayari', icon: Edit, label: 'My Shayari', mobileLabel: 'My Posts' },
+    { path: '/writers', icon: Users, label: 'Writers', mobileLabel: 'Writers' },
+    { path: '/profile', icon: User, label: 'Profile', mobileLabel: 'Profile' }
   ];
 
   return (
     <>
-      {/* Mobile Header */}
+      {/* Mobile Header - Instagram Style */}
       {isMobile && (
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-orange-500/20 px-4 py-2">
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 mobile-header px-4 py-3">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold" style={{ 
+            <h1 className="text-2xl font-bold" style={{ 
               fontFamily: 'Tillana, cursive',
               color: '#ff6b35'
             }}>
-              रामा..!
+              रामा
             </h1>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <NotificationCenter user={user} />
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 text-orange-500 hover:bg-orange-500/20 rounded-lg transition-all"
+                className="p-2 text-white hover:bg-gray-800 rounded-lg transition-all mobile-nav-transition"
               >
-                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu Overlay - Instagram Style */}
       {isMobile && isMobileMenuOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-          onClick={closeMobileMenu}
-        />
+        <>
+          <div 
+            className="lg:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+            onClick={closeMobileMenu}
+          />
+          <div className="lg:hidden fixed top-16 right-4 z-50 mobile-menu-dropdown rounded-2xl shadow-2xl min-w-[200px]">
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-3 pb-3 border-b border-gray-700/50">
+                <div className="w-10 h-10 profile-avatar rounded-full flex items-center justify-center">
+                  <User size={20} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-sm">@{user?.username || 'Guest'}</p>
+                  <p className="text-gray-400 text-xs">{user?.role || 'Reader'}</p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/50 transition-all text-left"
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                <span className="text-sm">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+              </button>
+              
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left"
+              >
+                <LogOut size={18} />
+                <span className="text-sm">Logout</span>
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
-      {/* Desktop Sidebar / Mobile Slide Menu */}
+      {/* Desktop Sidebar */}
       <div className={`
-        ${isMobile ? 'lg:hidden' : 'hidden lg:flex'}
-        ${isMobile && isMobileMenuOpen ? 'translate-x-0' : isMobile ? '-translate-x-full' : ''}
-        w-64 h-screen fixed left-0 top-0 glass-card flex-col p-6 z-50 transition-transform duration-300
+        hidden lg:flex
+        w-64 h-screen fixed left-0 top-0 glass-card flex-col p-6 z-50
       `} style={{
         borderRight: '1px solid rgba(255, 107, 53, 0.2)'
       }}>
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <h1 className="text-4xl font-bold" style={{ 
-              fontFamily: 'Tillana, cursive',
-              color: '#ff6b35',
-              textShadow: '0 0 20px rgba(255, 107, 53, 0.5)'
-            }}>
-              रामा..!
-            </h1>
-            {isMobile && (
-              <button
-                onClick={closeMobileMenu}
-                className="p-2 text-gray-400 hover:text-white"
-              >
-                <X size={20} />
-              </button>
-            )}
-          </div>
-          {!isMobile && (
-            <div className="mt-4 flex justify-center">
-              {/* Notification bell moved to fixed position - see below */}
-            </div>
-          )}
+          <h1 className="text-4xl font-bold" style={{ 
+            fontFamily: 'Tillana, cursive',
+            color: '#ff6b35',
+            textShadow: '0 0 20px rgba(255, 107, 53, 0.5)'
+          }}>
+            रामा..!
+          </h1>
         </div>
 
         <button
@@ -131,7 +157,6 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
             <NavLink
               key={item.path}
               to={item.path}
-              onClick={closeMobileMenu}
               data-testid={`nav-${item.label.toLowerCase().replace(' ', '-')}`}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
@@ -168,32 +193,34 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation - Instagram Style */}
       {isMobile && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-orange-500/20">
-          <div className="flex items-center justify-around py-2">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 mobile-bottom-nav">
+          <div className="flex items-center justify-around py-2 px-2">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all ${
+                  `mobile-nav-item mobile-nav-transition rounded-lg ${
                     isActive
-                      ? 'text-orange-500'
+                      ? 'mobile-nav-active'
                       : 'text-gray-400 hover:text-white'
                   }`
                 }
               >
-                <item.icon size={20} />
-                <span className="text-xs">{item.label}</span>
+                <item.icon size={22} strokeWidth={1.5} />
+                <span className="text-xs font-medium">{item.mobileLabel}</span>
               </NavLink>
             ))}
             <button
               onClick={handleNewShayari}
-              className="flex flex-col items-center gap-1 px-3 py-2 text-orange-500"
+              className="mobile-nav-item text-orange-500"
             >
-              <Plus size={20} />
-              <span className="text-xs">Create</span>
+              <div className="w-6 h-6 mobile-create-btn flex items-center justify-center">
+                <Plus size={16} strokeWidth={2} className="text-white" />
+              </div>
+              <span className="text-xs font-medium">Create</span>
             </button>
           </div>
         </div>

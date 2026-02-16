@@ -8,7 +8,7 @@ import os
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 MONGO_URL = "mongodb://localhost:27017"
-DB_NAME = "test_database"
+DB_NAME = "raama_development"
 
 async def seed_database():
     client = AsyncIOMotorClient(MONGO_URL)

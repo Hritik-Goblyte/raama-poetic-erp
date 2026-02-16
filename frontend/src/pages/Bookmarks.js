@@ -101,11 +101,12 @@ export default function Bookmarks({ theme, setTheme }) {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6">
-              {bookmarks.map((bookmark) => (
+              {bookmarks.map((bookmark, index) => (
                 <div 
                   key={bookmark.id} 
-                  className="glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.01]"
+                  className="glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all cursor-pointer transform hover:scale-[1.01] slide-in-up"
                   onClick={() => handleShayariClick(bookmark)}
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">

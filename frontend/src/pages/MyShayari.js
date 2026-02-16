@@ -155,12 +155,13 @@ export default function MyShayari({ theme, setTheme }) {
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
-                {shayaris.map((shayari) => (
+                {shayaris.map((shayari, index) => (
                   <div 
                     key={shayari.id} 
-                    className="glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all group cursor-pointer transform hover:scale-[1.02]" 
+                    className="glass-card p-6 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all group cursor-pointer transform hover:scale-[1.02] slide-in-up" 
                     data-testid="my-shayari-card"
                     onClick={() => handleShayariClick(shayari)}
+                    style={{ animationDelay: `${index * 100}ms` }}
                   >
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-xl font-bold text-orange-500 flex-1">{shayari.title}</h3>
