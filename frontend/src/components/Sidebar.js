@@ -4,11 +4,18 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState, useEffect } from 'react';
 import NotificationCenter from './NotificationCenter';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_API_URL || 'https://raama-backend-srrb.onrender.com';
+const API = `${BACKEND_URL}/api`;
 
 export default function Sidebar({ theme, setTheme, onNewShayari }) {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('raama-user') || '{}');
+  const token = localStorage.getItem('raama-token');
   const [showRestrictionModal, setShowRestrictionModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newShayari, setNewShayari] = useState({ title: '', content: '' });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -45,9 +52,49 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
     if (user.role !== 'writer') {
       setShowRestrictionModal(true);
     } else {
-      onNewShayari();
+      // If onNewShayari prop exists (Dashboard/MyShayari), use it
+      if (onNewShayari && typeof onNewShayari === 'function') {
+        onNewShayari();
+      } else {
+        // Otherwise, use the global create modal
+        setShowCreateModal(true);
+      }
     }
     setIsMobileMenuOpen(false);
+  };
+
+  const handleCreateShayari = async (e) => {
+    e.preventDefault();
+    try {
+      const processingToast = toast.loading('Creating shayari and processing with AI...', {
+        duration: 10000
+      });
+      
+      const response = await axios.post(`${API}/shayaris`, newShayari, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      toast.dismiss(processingToast);
+      
+      const shayari = response.data;
+      if (shayari.aiProcessed) {
+        toast.success('Shayari created successfully with AI analysis! 🤖✨', {
+          description: 'Your shayari has been analyzed and enhanced by AI'
+        });
+      } else {
+        toast.success('Shayari created successfully!', {
+          description: 'AI analysis was not available'
+        });
+      }
+      
+      setShowCreateModal(false);
+      setNewShayari({ title: '', content: '' });
+      
+      // Navigate to My Shayari page to see the new creation
+      navigate('/my-shayari');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to create shayari');
+    }
   };
 
   const closeMobileMenu = () => {
@@ -249,6 +296,45 @@ export default function Sidebar({ theme, setTheme, onNewShayari }) {
             <p>Only writers can create shayaris. Your current role is <span className="font-bold text-orange-500">{user.role}</span>.</p>
             <p className="mt-4 text-sm text-gray-400">To become a writer, please contact the administrator.</p>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Global Create Shayari Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="bg-gray-900 border-orange-500/30 max-w-2xl w-[95vw] lg:w-full m-2 lg:m-auto" aria-describedby="create-shayari-description">
+          <DialogHeader>
+            <DialogTitle className="text-orange-500 text-3xl" style={{ fontFamily: 'Macondo, cursive' }}>Create New Shayari</DialogTitle>
+          </DialogHeader>
+          <p id="create-shayari-description" className="sr-only">Form to create a new shayari with title and content fields</p>
+          <form onSubmit={handleCreateShayari} className="space-y-4">
+            <div>
+              <input
+                type="text"
+                placeholder="Shayari Title"
+                required
+                value={newShayari.title}
+                onChange={(e) => setNewShayari({...newShayari, title: e.target.value})}
+                className="w-full px-4 py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <textarea
+                placeholder="Write your shayari here..."
+                required
+                rows={8}
+                value={newShayari.content}
+                onChange={(e) => setNewShayari({...newShayari, content: e.target.value})}
+                className="w-full px-4 py-3 bg-black/30 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none resize-none"
+                style={{ fontFamily: 'Style Script, cursive', fontSize: '1.1rem' }}
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-all hover:shadow-lg hover:shadow-orange-500/50"
+            >
+              Create Shayari
+            </button>
+          </form>
         </DialogContent>
       </Dialog>
     </>
