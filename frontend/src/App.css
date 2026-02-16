@@ -1036,16 +1036,16 @@ body {
   .mobile-header {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    background: rgba(0, 0, 0, 0.95);
-    border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+    background: var(--app-bg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
   
   /* Instagram-style bottom navigation */
   .mobile-bottom-nav {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    background: rgba(0, 0, 0, 0.95);
-    border-top: 1px solid rgba(128, 128, 128, 0.2);
+    background: var(--app-bg);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
   
   /* Better touch targets for mobile nav */
@@ -1165,8 +1165,8 @@ body {
 /* Dark mode specific mobile improvements */
 .dark .mobile-header,
 .dark .mobile-bottom-nav {
-  background: rgba(0, 0, 0, 0.95);
-  border-color: rgba(75, 85, 99, 0.3);
+  background: var(--dark-bg);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .dark .mobile-menu-dropdown {
@@ -1177,8 +1177,8 @@ body {
 /* Light mode mobile navigation (if needed) */
 .light .mobile-header,
 .light .mobile-bottom-nav {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(229, 231, 235, 0.8);
+  background: var(--light-bg);
+  border-color: rgba(0, 0, 0, 0.08);
   color: #1f2937;
 }
 
