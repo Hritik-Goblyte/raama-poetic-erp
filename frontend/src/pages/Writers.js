@@ -137,7 +137,7 @@ export default function Writers({ theme, setTheme }) {
     <div className="flex" style={{ background: 'var(--app-bg)', color: 'var(--app-text)' }}>
       <Sidebar theme={theme} setTheme={setTheme} onNewShayari={() => {}} />
       
-      <div className="lg:ml-64 flex-1 p-4 lg:p-8 min-h-screen pt-20 lg:pt-8 pb-20 lg:pb-8">
+      <div className="lg:ml-64 flex-1 p-4 lg:p-8 min-h-screen pt-24 lg:pt-8 pb-20 lg:pb-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl lg:text-5xl font-bold mb-2" style={{ 
