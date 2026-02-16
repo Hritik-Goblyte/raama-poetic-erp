@@ -3214,6 +3214,66 @@ async def deactivate_spotlight(spotlight_id: str, admin_user: User = Depends(get
     
     return {"message": "Spotlight deactivated successfully"}
 
+@api_router.delete("/admin/spotlights/{spotlight_id}")
+async def delete_spotlight(spotlight_id: str, admin_user: User = Depends(get_admin_user)):
+    """Admin endpoint to permanently delete a spotlight"""
+    result = await db.writer_spotlights.delete_one({"id": spotlight_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Spotlight not found")
+    
+    return {"message": "Spotlight deleted successfully"}
+
+@api_router.get("/spotlights/all")
+async def get_all_spotlights(
+    include_inactive: bool = True,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all spotlights including past/inactive ones"""
+    query = {}
+    if not include_inactive:
+        query["isActive"] = True
+    
+    spotlights = await db.writer_spotlights.find(query, {"_id": 0}).sort("createdAt", -1).to_list(100)
+    
+    # Get writer details for each spotlight
+    for spotlight in spotlights:
+        writer = await db.users.find_one({"id": spotlight['writerId']}, {"_id": 0, "password": 0})
+        if writer:
+            spotlight['writer'] = writer
+        
+        # Get featured shayaris
+        if spotlight.get('featuredShayariIds'):
+            shayaris = await db.shayaris.find(
+                {"id": {"$in": spotlight['featuredShayariIds']}},
+                {"_id": 0}
+            ).to_list(10)
+            spotlight['featuredShayaris'] = shayaris
+    
+    return spotlights
+
+@api_router.get("/spotlights/writer/{writer_id}")
+async def get_writer_spotlights(
+    writer_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all spotlights for a specific writer"""
+    spotlights = await db.writer_spotlights.find(
+        {"writerId": writer_id},
+        {"_id": 0}
+    ).sort("createdAt", -1).to_list(100)
+    
+    # Get featured shayaris for each spotlight
+    for spotlight in spotlights:
+        if spotlight.get('featuredShayariIds'):
+            shayaris = await db.shayaris.find(
+                {"id": {"$in": spotlight['featuredShayariIds']}},
+                {"_id": 0}
+            ).to_list(10)
+            spotlight['featuredShayaris'] = shayaris
+    
+    return spotlights
+
 @api_router.post("/notifications/subscribe")
 async def subscribe_to_push(subscription_data: dict, current_user: User = Depends(get_current_user)):
     """Subscribe user to push notifications"""

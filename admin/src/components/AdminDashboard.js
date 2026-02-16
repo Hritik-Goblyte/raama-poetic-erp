@@ -435,14 +435,29 @@ export default function AdminDashboard({ user, onLogout }) {
     }
   };
 
+  const handleDeleteSpotlight = async (spotlightId) => {
+    try {
+      await axios.delete(`${API}/admin/spotlights/${spotlightId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      toast.success('Spotlight deleted successfully');
+      fetchSpotlights();
+    } catch (error) {
+      toast.error('Failed to delete spotlight');
+    }
+  };
+
   const fetchSpotlights = async () => {
     try {
-      const response = await axios.get(`${API}/spotlights`, {
+      const response = await axios.get(`${API}/spotlights/all`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSpotlights(response.data);
     } catch (error) {
       console.error('Error fetching spotlights:', error);
+    }
+  };
     }
   };
 
@@ -1131,44 +1146,109 @@ export default function AdminDashboard({ user, onLogout }) {
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {spotlights.map(spotlight => (
-                <div key={spotlight.id} className="glass-card p-6 border-2 border-yellow-500/30">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <Award size={24} className="text-yellow-500" />
-                      <div>
-                        <h3 className="font-bold text-yellow-500">{spotlight.title}</h3>
-                        <p className="text-gray-400 text-sm">@{spotlight.writerUsername}</p>
+            {/* Active Spotlights */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4 text-green-400">Active Spotlights</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {spotlights.filter(s => s.isActive).map(spotlight => (
+                  <div key={spotlight.id} className="glass-card p-6 border-2 border-green-500/30">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <Award size={24} className="text-yellow-500" />
+                        <div>
+                          <h3 className="font-bold text-yellow-500">{spotlight.title}</h3>
+                          <p className="text-gray-400 text-sm">@{spotlight.writerUsername}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleDeactivateSpotlight(spotlight.id)}
+                          className="text-gray-400 hover:text-orange-500 transition-colors"
+                          title="Deactivate Spotlight"
+                        >
+                          <XCircle size={16} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to permanently delete this spotlight?')) {
+                              handleDeleteSpotlight(spotlight.id);
+                            }
+                          }}
+                          className="text-gray-400 hover:text-red-500 transition-colors"
+                          title="Delete Spotlight"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDeactivateSpotlight(spotlight.id)}
-                      className="text-gray-400 hover:text-red-500 transition-colors"
-                      title="Deactivate Spotlight"
-                    >
-                      <XCircle size={16} />
-                    </button>
+                    <p className="text-gray-300 mb-4">{spotlight.description}</p>
+                    <div className="text-sm text-gray-400">
+                      <p>Writer: {spotlight.writerName}</p>
+                      <p>Created: {format(new Date(spotlight.createdAt), 'MMM dd, yyyy')}</p>
+                      {spotlight.endDate && (
+                        <p>Ends: {format(new Date(spotlight.endDate), 'MMM dd, yyyy')}</p>
+                      )}
+                      <p className="font-medium text-green-500 mt-2">
+                        Status: Active
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-gray-300 mb-4">{spotlight.description}</p>
-                  <div className="text-sm text-gray-400">
-                    <p>Writer: {spotlight.writerName}</p>
-                    <p>Created: {format(new Date(spotlight.createdAt), 'MMM dd, yyyy')}</p>
-                    <p className={`font-medium ${spotlight.isActive ? 'text-green-500' : 'text-red-500'}`}>
-                      Status: {spotlight.isActive ? 'Active' : 'Inactive'}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {spotlights.length === 0 && (
-              <div className="glass-card p-8 text-center">
-                <Award size={48} className="mx-auto text-gray-500 mb-4" />
-                <p className="text-xl text-gray-400 mb-4">No writer spotlights created</p>
-                <p className="text-gray-500">Create spotlights to feature talented writers on the platform.</p>
+                ))}
               </div>
-            )}
+              {spotlights.filter(s => s.isActive).length === 0 && (
+                <div className="glass-card p-8 text-center">
+                  <Award size={48} className="mx-auto text-gray-500 mb-4" />
+                  <p className="text-xl text-gray-400">No active spotlights</p>
+                </div>
+              )}
+            </div>
+
+            {/* Past/Inactive Spotlights */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4 text-gray-400">Spotlight History</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {spotlights.filter(s => !s.isActive).map(spotlight => (
+                  <div key={spotlight.id} className="glass-card p-6 border-2 border-gray-700/30 opacity-75">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <Award size={24} className="text-gray-500" />
+                        <div>
+                          <h3 className="font-bold text-gray-400">{spotlight.title}</h3>
+                          <p className="text-gray-500 text-sm">@{spotlight.writerUsername}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to permanently delete this spotlight?')) {
+                            handleDeleteSpotlight(spotlight.id);
+                          }
+                        }}
+                        className="text-gray-400 hover:text-red-500 transition-colors"
+                        title="Delete Spotlight"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <p className="text-gray-400 mb-4">{spotlight.description}</p>
+                    <div className="text-sm text-gray-500">
+                      <p>Writer: {spotlight.writerName}</p>
+                      <p>Created: {format(new Date(spotlight.createdAt), 'MMM dd, yyyy')}</p>
+                      {spotlight.endDate && (
+                        <p>Ended: {format(new Date(spotlight.endDate), 'MMM dd, yyyy')}</p>
+                      )}
+                      <p className="font-medium text-red-500 mt-2">
+                        Status: Inactive
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {spotlights.filter(s => !s.isActive).length === 0 && (
+                <div className="glass-card p-8 text-center">
+                  <p className="text-gray-500">No spotlight history</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
