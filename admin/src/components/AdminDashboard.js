@@ -452,10 +452,6 @@ export default function AdminDashboard({ user, onLogout }) {
     try {
       const response = await axios.get(`${API}/spotlights/all`, {
         headers: { Authorization: `Bearer ${token}` }
-  const fetchSpotlights = async () => {
-    try {
-      const response = await axios.get(`${API}/spotlights/all`, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       setSpotlights(response.data);
     } catch (error) {
